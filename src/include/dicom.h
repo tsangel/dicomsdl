@@ -9,6 +9,8 @@
 #ifndef DICOMSDL_DICOM_H_
 #define DICOMSDL_DICOM_H_
 
+#include <string.h>
+
 #include <functional>
 #include <map>
 #include <memory>
