@@ -34,14 +34,15 @@ environment:
     TOXENV: "py37"
     
 install:
+  - cmd: echo "Using cmd"
+  - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
+  - pip install wheel
 
 build_script:
-  - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
   - echo %PYTHON%
   - echo %PATH%
   - where python
   - where pip
-  - pip install wheel
   - python setup.py bdist_wheel
   - ps: ls dist
 
