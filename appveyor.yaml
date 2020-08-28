@@ -9,8 +9,14 @@ environment:
 
 build: off
 
+build_script:
+- python setup.py bdist_w
+
 install:
 - pip install tox
 
 test_script:
 - tox
+
+artifacts:
+  - path: dist\*
