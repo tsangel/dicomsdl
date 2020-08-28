@@ -25,12 +25,10 @@ environment:
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 build_script:
-  - cmd: >-
-    pip install wheel
-    python setup.py bdist_wheel
+  - pip install wheel
+  - python setup.py bdist_wheel
 test_script:
-  - cmd: >-
-    pip install tox
-    tox -e %TOXENV%
+  - pip install tox
+  - tox -e %TOXENV%
 artifacts:
 - path: dist/*
