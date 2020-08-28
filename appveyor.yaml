@@ -10,7 +10,7 @@ environment:
 build: off
 
 build_script:
-- python setup.py bdist_w
+- python setup.py bdist_wheel
 
 install:
 - pip install tox
