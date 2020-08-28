@@ -36,7 +36,7 @@ environment:
 install:
 
 build_script:
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
   - pip install wheel
   - python setup.py bdist_wheel
   - ps: ls dist
