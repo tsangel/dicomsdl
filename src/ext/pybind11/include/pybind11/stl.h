@@ -23,10 +23,8 @@
 #pragma warning(disable: 4127) // warning C4127: Conditional expression is constant
 #endif
 
-#  include <optional>
-#  include <variant>
-#  define PYBIND11_HAS_OPTIONAL 1
-#  define PYBIND11_HAS_VARIANT 1
+#  define PYBIND11_HAS_OPTIONAL 0
+#  define PYBIND11_HAS_VARIANT 0
 // #ifdef __has_include
 // // std::optional (but including it in c++14 mode isn't allowed)
 // #  if defined(PYBIND11_CPP17) && __has_include(<optional>)
