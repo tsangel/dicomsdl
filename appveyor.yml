@@ -1,6 +1,5 @@
 environment:
   global:
-    CIBW_TEST_REQUIRES: pytest
     CIBW_TEST_COMMAND: "pytest {project}/tests"
     CIBW_TEST_REQUIRES: pytest numpy pillow
     CIBW_SKIP: pp* *ppc64le *aarch64 *s390x
