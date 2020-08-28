@@ -1,3 +1,3 @@
-# dicomsdl
+# DICOMSDL
 DICOM Software Development Library
 
