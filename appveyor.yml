@@ -1,77 +1,21 @@
-# appveyor.yml
-
 environment:
-  global:
-    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
-    # /E:ON and /V:ON options are not enabled in the batch script intepreter
-    # See: http://stackoverflow.com/a/13751649/163740
-    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
-
   matrix:
-  
-#   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-#     PYTHON: "C:\\Python27"
-#     PYTHON_VERSION: "2.7.x"
-#     PYTHON_ARCH: "32"
-#     TOXENV: "py27"
-#   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-#     PYTHON: "C:\\Python27-x64"
-#     PYTHON_VERSION: "2.7.x"
-#     PYTHON_ARCH: "64"
-#     TOXENV: "py27"
-#   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-#     PYTHON: "C:\\Python36"
-#     PYTHON_VERSION: "3.6.x"
-#     PYTHON_ARCH: "32"
-#     TOXENV: "py36"
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      APPVEYOR_JOB_NAME: "python37-x64-ubuntu"
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      APPVEYOR_JOB_NAME: "python37-x64-vs2015"
+    - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
+      APPVEYOR_JOB_NAME: "python37-x64-macos-mojave"
 
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-    PYTHON: "C:\\Python36-x86"
-    PYTHON_VERSION: "3.6.x"
-    PYTHON_ARCH: "64"
-    TOXENV: "py36"
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-    PYTHON: "C:\\Python37"
-    PYTHON_VERSION: "3.7.x"
-    PYTHON_ARCH: "32"
-    TOXENV: "py37"
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-    PYTHON: "C:\\Python37-x86"
-    PYTHON_VERSION: "3.7.x"
-    PYTHON_ARCH: "64"
-    TOXENV: "py37"
-    
-install:
-  - ECHO "Filesystem root:"
-  - ps: "ls \"C:/\""
+stack: python 3.7
 
-  - ECHO "Installed SDKs:"
-  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
+init:
+- cmd: set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
 
-  # Prepend newly installed Python to the PATH of this build (this cannot be
-  # done from inside the powershell script as it would require to restart
-  # the parent CMD process).
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+install: python -m pip install cibuildwheel==1.5.5
 
-  # Check that we have the expected version and architecture for Python
-  - "python --version"
-  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+build_script: python -m cibuildwheel --output-dir wheelhouse
 
-  # Upgrade to the latest version of pip to avoid it displaying warnings
-  # about it being out of date.
-  - "python -m pip install --upgrade pip"
-
-build_script:
-  - echo %PYTHON%
-  - echo %PATH%
-  - where python
-  - where pip
-  - "%CMD_IN_ENV% python setup.py bdist_wheel"
-  - ps: ls dist
-
-test_script:
-  - "%CMD_IN_ENV% pip install tox"
-  - "%CMD_IN_ENV% tox -e %TOXENV%"
-  
 artifacts:
-- path: dist/*
+  - path: "wheelhouse\\*.whl"
+    name: Wheels
