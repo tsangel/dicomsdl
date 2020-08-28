@@ -781,7 +781,7 @@ std::wstring DataSet::dump(size_t max_length) {
                de->offset());
       wss << buf;
       
-      wss << L"\t" << de->repr_str(max_length);
+      wss << L"\t" << de->repr(max_length);
 
       switch (tag) {
         case 0x00020002:

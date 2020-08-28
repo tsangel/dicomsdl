@@ -66,8 +66,9 @@ const codeset_struct_t CODESETS[] = {
     // Default repertoire -- ISO-IR 6
     {CHARSET::DEFAULT, CHARSET::DEFAULT, CHARSET::UNKNOWN, "",
      "Default repertoire", ascii_to_unicode, unicode_to_ascii},
+    // Default repertoire -- ISO-IR 6
     {CHARSET::ISO_IR_6, CHARSET::ISO_IR_6, CHARSET::UNKNOWN, "ISO_IR 6",
-     "Defaultrepertoire​", ascii_to_unicode, unicode_to_ascii},
+     "Default repertoire", ascii_to_unicode, unicode_to_ascii},
     // Latin alphabet No. 1
     {CHARSET::ISO_IR_100, CHARSET::DEFAULT, CHARSET::ISO_IR_100, "ISO_IR 100",
      "Latin alphabet No. 1", latin1_to_unicode, unicode_to_latin1},

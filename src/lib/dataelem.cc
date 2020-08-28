@@ -557,36 +557,36 @@ std::string DataElement::toBytes(const char *default_value) {
       case VR::AE:  // leading and trailing spaces (20H) being non-significant.
       case VR::AS:  // 4 bytes fixed
       case VR::CS:  // leading and trailing spaces (20H) being non-significant.
-      case VR::DS:  // may be padded with​ leading or trailing spaces
-      case VR::DT:  // fixed format YYYYMMDDHHMMSS.FFFFFF&ZZXX​
-      case VR::IS:  // may be padded with leading and/or trailing spaces.​
-      case VR::LO:  // may be padded with leading and/or trailing​ spaces.
-      case VR::PN:  // leading and trailing spaces and considers them​
-                    // insignificant.​
-      case VR::SH:  // may be padded with leading and/or trailing​ spaces.
+      case VR::DS:  // may be padded with leading or trailing spaces
+      case VR::DT:  // fixed format YYYYMMDDHHMMSS.FFFFFF&ZZXX
+      case VR::IS:  // may be padded with leading and/or trailing spaces.
+      case VR::LO:  // may be padded with leading and/or trailing spaces.
+      case VR::PN:  // leading and trailing spaces and considers them
+                    // insignificant.
+      case VR::SH:  // may be padded with leading and/or trailing spaces.
         de_value_lstrip(&s, &n);
         de_value_rstrip(&s, &n);
         break;
 
       // ignore trailing spaces
-      case VR::DA:  // a trailing SPACE​ character is allowed for​
-                    // padding.​
-      case VR::TM:  // may be padded with trailing​ spaces. Leading and
-                    // embedded spaces are not allowed.​
+      case VR::DA:  // a trailing SPACE character is allowed for
+                    // padding.
+      case VR::TM:  // may be padded with trailing spaces. Leading and
+                    // embedded spaces are not allowed.
 
-      case VR::UC:  // may be​ padded with trailing spaces.
-      case VR::UI:  // the Value​ Field shall be padded with a single trailing
-                    // NULL (00H) character​ to ensure that the Value Field is
+      case VR::UC:  // may be padded with trailing spaces.
+      case VR::UI:  // the Value Field shall be padded with a single trailing
+                    // NULL (00H) character to ensure that the Value Field is
                     // an even number of bytes in length
-      case VR::UR:  // Trailing spaces shall​ be ignored
+      case VR::UR:  // Trailing spaces shall be ignored
         de_value_rstrip(&s, &n);
         break;
 
       // remove trailing spaces, but keep leading spaces.
       case VR::LT:
       case VR::ST:
-      case VR::UT:  // It may be padded with trailing spaces, which​ may be
-                    // ignored, but leading spaces are considered to be​
+      case VR::UT:  // It may be padded with trailing spaces, which may be
+                    // ignored, but leading spaces are considered to be
                     // significant
         de_value_rstrip(&s, &n);
         break;
@@ -599,7 +599,7 @@ std::string DataElement::toBytes(const char *default_value) {
     return std::string("");
 }
 
-std::wstring DataElement::repr_str(size_t max_length)
+std::wstring DataElement::repr(size_t max_length)
 {
   // TODO: \n \t ...
   // TODO: LO - strip heading/trailing spaces!!!!!!!!!!!!!!!!!?????????????
@@ -771,35 +771,35 @@ std::wstring DataElement::toString(const wchar_t *default_value) {
     case VR::AE:  // leading and trailing spaces (20H) being non-significant.
     case VR::AS:  // 4 bytes fixed
     case VR::CS:  // leading and trailing spaces (20H) being non-significant.
-    case VR::DS:  // may be padded with​ leading or trailing spaces
-    case VR::DT:  // fixed format YYYYMMDDHHMMSS.FFFFFF&ZZXX​
-    case VR::IS:  // may be padded with leading and/or trailing spaces.​
-    case VR::LO:  // may be padded with leading and/or trailing​ spaces.
-    case VR::PN:  // leading and trailing spaces and considers them​
-                  // insignificant.​
-    case VR::SH:  // may be padded with leading and/or trailing​ spaces.
+    case VR::DS:  // may be padded with leading or trailing spaces
+    case VR::DT:  // fixed format YYYYMMDDHHMMSS.FFFFFF&ZZXX
+    case VR::IS:  // may be padded with leading and/or trailing spaces.
+    case VR::LO:  // may be padded with leading and/or trailing spaces.
+    case VR::PN:  // leading and trailing spaces and considers them
+                  // insignificant.
+    case VR::SH:  // may be padded with leading and/or trailing spaces.
       de_value_lstrip(&p, &n);
       de_value_rstrip(&p, &n);
       break;
 
     // ignore trailing spaces
-    case VR::DA:  // a trailing SPACE​ character is allowed for​ padding.​
-    case VR::TM:  // may be padded with trailing​ spaces. Leading and embedded
-                  // spaces are not allowed.​
+    case VR::DA:  // a trailing SPACE character is allowed for padding.
+    case VR::TM:  // may be padded with trailing spaces. Leading and embedded
+                  // spaces are not allowed.
 
-    case VR::UC:  // may be​ padded with trailing spaces.
-    case VR::UI:  // the Value​ Field shall be padded with a single trailing
-                  // NULL (00H) character​ to ensure that the Value Field is
+    case VR::UC:  // may be padded with trailing spaces.
+    case VR::UI:  // the Value Field shall be padded with a single trailing
+                  // NULL (00H) character to ensure that the Value Field is
                   // an even number of bytes in length
-    case VR::UR:  // Trailing spaces shall​ be ignored
+    case VR::UR:  // Trailing spaces shall be ignored
       de_value_rstrip(&p, &n);
       break;
 
     // remove trailing spaces, but keep leading spaces.
     case VR::LT:
     case VR::ST:
-    case VR::UT:  // It may be padded with trailing spaces, which​ may be
-                  // ignored, but leading spaces are considered to be​
+    case VR::UT:  // It may be padded with trailing spaces, which may be
+                  // ignored, but leading spaces are considered to be
                   // significant
       de_value_rstrip(&p, &n);
       break;

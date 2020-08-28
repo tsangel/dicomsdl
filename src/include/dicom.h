@@ -337,7 +337,7 @@ class DataElement {
   /// are stripped according to the VR.
   std::string toBytes(const char* default_value = "");
 
-  std::wstring repr_str(size_t max_length);
+  std::wstring repr(size_t max_length);
 
   long toLong(long default_value = 0);
   long long toLongLong(long long default_value = 0);
