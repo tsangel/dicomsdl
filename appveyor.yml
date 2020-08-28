@@ -34,9 +34,9 @@ environment:
     TOXENV: "py37"
     
 install:
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
 build_script:
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install wheel
   - python setup.py bdist_wheel
   - ps: ls dist
