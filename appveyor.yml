@@ -7,7 +7,8 @@ environment:
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
 
-matrix:
+  matrix:
+  
 #   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
 #     PYTHON: "C:\\Python27"
 #     PYTHON_VERSION: "2.7.x"
@@ -23,6 +24,7 @@ matrix:
 #     PYTHON_VERSION: "3.6.x"
 #     PYTHON_ARCH: "32"
 #     TOXENV: "py36"
+
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
     PYTHON: "C:\\Python36-x86"
     PYTHON_VERSION: "3.6.x"
