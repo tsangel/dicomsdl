@@ -9,8 +9,13 @@ environment:
 
 build: off
 
+build_script: off
+
 install:
 - pip install tox
 
 test_script:
 - tox
+
+artifacts:
+  - path: dist\*
