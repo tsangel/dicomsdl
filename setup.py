@@ -60,7 +60,7 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 setup(
     name='dicomsdl',
-    version='0.20200819',
+    version='0.105.1',
     author='Kim, Tae-Sung',
     author_email='taesung.angel@gmail.com',
     description='A fast and light-weighted DICOM software development library',
