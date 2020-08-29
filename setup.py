@@ -8,11 +8,18 @@ from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
+def get_dicomsdl_version():
+    lines = open('src/include/dicomcfg.h').readlines()
+    line = [l for l in lines if 'DICOMSDL_VERSION' in l][0]
+    # line = 'const char *const DICOMSDL_VERSION = "0.105.1";\n'
+    verstr = line.split('=')[-1].split('"')[1].strip()
+    # verstr = '0.105.1'
+    return verstr
+
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
-
 
 class CMakeBuild(build_ext):
     def run(self):
@@ -32,7 +39,6 @@ class CMakeBuild(build_ext):
 
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
-        # required for auto-detection of auxiliary "native" libs
         if not extdir.endswith(os.path.sep):
             extdir += os.path.sep
 
@@ -60,7 +66,7 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 setup(
     name='dicomsdl',
-    version='0.105.1',
+    version=get_dicomsdl_version(),
     author='Kim, Tae-Sung',
     author_email='taesung.angel@gmail.com',
     description='A fast and light-weighted DICOM software development library',
