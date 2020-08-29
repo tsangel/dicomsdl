@@ -24,7 +24,7 @@ def __dataset__getitem__(self, tagstr):
 DataSet.__getitem__ = __dataset__getitem__
 
 def __dataset__getattr__(self, key):
-      tag = get_tag(key)
+      tag = TAG.from_keyword(key)
       if tag == 0xffffffff:
           raise AttributeError("'DataSet' object has no attribute '%s'"%(key))
       else:
@@ -38,7 +38,7 @@ def __dataset____dir__(self):
     under interactive console environment. 
     """
     return self.____dir__() +\
-        [get_tag_keyword(de.tag())
+        [TAG.keyword(de.tag())
          for de in self
          if de.tag() & 0x10000 == 0 and de.tag() & 0xffff != 0]
 DataSet.____dir__ = DataSet.__dir__ if IS_PY3 else lambda _: dir(DataSet)
