@@ -41,59 +41,59 @@ TAG	VR	LEN	VM	OFFSET	KEYWORD
 '00091014'	IS	6	1	0x412	'12345'	# (Private Data Elements)
 '00091015'	IS	24	1	0x420	'12345/67890/98765/43210'	# (Private Data Elements)
 '00091016'	LO	16	1	0x440	'A Long String'	# (Private Data Elements)
-'00091017'	LO	36	2	0x458	'Long Strings \ of multiple values'	# (Private Data Elements)
-'00091018'	LT	96	1	0x484	'  A Long Text with significant leading space, 
- in multiple line. Trailing space is ignored.\t'	# (Private Data Elements)
-'00091020'	OF	16	1	0x4f0	1.2\3.4\5.6\7.8	# (Private Data Elements)
-'00091021'	OD	32	1	0x50c	1.2\3.4\5.6\7.8	# (Private Data Elements)
-'00091022'	OB	4	1	0x538	'\x01\x02\x03\x04'	# (Private Data Elements)
-'00091023'	OW	8	1	0x548	0001\0002\0003\0004	# (Private Data Elements)
-'00091024'	OL	16	1	0x55c	00010000\00010001\00010002\00010003	# (Private Data Elements)
-'00091025'	OV	32	1	0x578	0000000000000001\0000000000000002\0000000000000003\0000000000000004	# (Private Data Elements)
-'00091026'	PN	10	1	0x5a0	'YOUR^ANGEL'	# (Private Data Elements)
-'00091027'	SH	36	2	0x5b2	'Short Strings \ of multiple values'	# (Private Data Elements)
-'00091034'	ST	98	1	0x5de	'   A Short Text with significant leading space, 
- in multiple line. Trailing space is ignored.\t'	# (Private Data Elements)
-'00091038'	TM	14	1	0x648	'123045.001122'	# (Private Data Elements)
-'00091040'	UC	82	3	0x662	'A string with unlimited length \ can have multiple value \ with some space padding'	# (Private Data Elements)
-'00091041'	UI	16	1	0x6bc	'1.2.3.4.5.6.7.8'	# (Private Data Elements)
-'00091054'	UT	102	1	0x6d8	'   An Unlimited Text with significant leading space, 
- in multiple line. Trailing space is ignored.\t'	# (Private Data Elements)
-'00091057'	UN	8	1	0x74a	'\x01\x02\x03\x04\x05\x06\x07\x08'	# (Private Data Elements)
-'00091058'	UR	36	1	0x75e	'http://www.ietf.org/rfc/rfc2396.txt'	# (Private Data Elements)
-'00091070'	SS	2	1	0x78a	337	# (Private Data Elements)
-'00091071'	SL	4	1	0x794	337	# (Private Data Elements)
-'00091072'	SV	8	1	0x7a4	337	# (Private Data Elements)
-'00091073'	US	2	1	0x7b4	337	# (Private Data Elements)
-'00091074'	UL	4	1	0x7be	337	# (Private Data Elements)
-'00091075'	UV	8	1	0x7ce	337	# (Private Data Elements)
-'00091076'	SS	8	4	0x7de	337\-338\339\-340	# (Private Data Elements)
-'00091077'	SL	16	4	0x7ee	337\-338\339\-340	# (Private Data Elements)
-'00091078'	SV	32	4	0x80a	337\-338\339\-340	# (Private Data Elements)
-'00091079'	US	8	4	0x832	337\338\339\340	# (Private Data Elements)
-'0009107a'	UL	16	4	0x842	337\338\339\340	# (Private Data Elements)
-'0009107b'	UV	32	4	0x85e	337\338\339\340	# (Private Data Elements)
-'00100010'	PN	10	1	0x886	'SAMPLENAME'	# PatientName
-'0020000d'	UI	36	1	0x898	'1.2.826.0.1.3680043.8.417.1.99.10000'	# StudyInstanceUID
-'0020000e'	UI	38	1	0x8c4	'1.2.826.0.1.3680043.8.417.1.99.10000.1'	# SeriesInstanceUID
-'00200010'	SH	0	0	0x8f2	(no value)	# StudyID
-'00200011'	IS	0	0	0x8fa	(no value)	# SeriesNumber
-'00200013'	IS	2	1	0x902	'1'	# InstanceNumber
-'00200032'	DS	16	3	0x90c	'-275\-275\144.5'	# ImagePositionPatient
-'00200037'	DS	12	6	0x924	'1\0\0\0\1\0'	# ImageOrientationPatient
-'00201041'	DS	8	1	0x938	'0.000000'	# SliceLocation
-'00280002'	US	2	1	0x948	1	# SamplesPerPixel
-'00280004'	CS	12	1	0x952	'MONOCHROME2'	# PhotometricInterpretation
-'00280010'	US	2	1	0x966	4	# Rows
-'00280011'	US	2	1	0x970	4	# Columns
-'00280030'	DS	4	2	0x97a	'4\4'	# PixelSpacing
-'00280100'	US	2	1	0x986	16	# BitsAllocated
-'00280101'	US	2	1	0x990	16	# BitsStored
-'00280102'	US	2	1	0x99a	15	# HighBit
-'00280103'	US	2	1	0x9a4	1	# PixelRepresentation
-'00280106'	SS	2	1	0x9ae	0	# SmallestImagePixelValue
-'00280107'	SS	2	1	0x9b8	1	# LargestImagePixelValue
-'00281052'	DS	2	1	0x9c2	'0'	# RescaleIntercept
-'00281053'	DS	4	1	0x9cc	'1.0'	# RescaleSlope
-'00282110'	CS	2	1	0x9d8	'00'	# LossyImageCompression
-'7fe00010'	OW	32	1	0x9e6	0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001	# PixelData
+'00091017'	LO	38	2	0x458	'Long Strings \ with multiple values'	# (Private Data Elements)
+'00091018'	LT	98	1	0x486	'  A Long Text with significant leading spaces, 
+ in multiple lines. Trailing space are ignored.'	# (Private Data Elements)
+'00091020'	OF	16	1	0x4f4	1.2\3.4\5.6\7.8	# (Private Data Elements)
+'00091021'	OD	32	1	0x510	1.2\3.4\5.6\7.8	# (Private Data Elements)
+'00091022'	OB	4	1	0x53c	'\x01\x02\x03\x04'	# (Private Data Elements)
+'00091023'	OW	8	1	0x54c	0001\0002\0003\0004	# (Private Data Elements)
+'00091024'	OL	16	1	0x560	00010000\00010001\00010002\00010003	# (Private Data Elements)
+'00091025'	OV	32	1	0x57c	0000000000000001\0000000000000002\0000000000000003\0000000000000004	# (Private Data Elements)
+'00091026'	PN	10	1	0x5a4	'YOUR^ANGEL'	# (Private Data Elements)
+'00091027'	SH	38	2	0x5b6	'Short Strings \ with multiple values'	# (Private Data Elements)
+'00091034'	ST	102	1	0x5e4	'   A Short Text with significant leading spaces, 
+ in multiple lines. Trailing spaces are ignored.'	# (Private Data Elements)
+'00091038'	TM	14	1	0x652	'123045.001122'	# (Private Data Elements)
+'00091040'	UC	94	3	0x66c	'A string with unlimited length \ can have multiple values \ with some padded trailing spaces.'	# (Private Data Elements)
+'00091041'	UI	16	1	0x6d2	'1.2.3.4.5.6.7.8'	# (Private Data Elements)
+'00091054'	UT	106	1	0x6ee	'   An Unlimited Text with significant leading spaces, 
+ in multiple lines. Trailing spaces are ignored.'	# (Private Data Elements)
+'00091057'	UN	8	1	0x764	'\x01\x02\x03\x04\x05\x06\x07\x08'	# (Private Data Elements)
+'00091058'	UR	36	1	0x778	'http://www.ietf.org/rfc/rfc2396.txt'	# (Private Data Elements)
+'00091070'	SS	2	1	0x7a4	337	# (Private Data Elements)
+'00091071'	SL	4	1	0x7ae	337	# (Private Data Elements)
+'00091072'	SV	8	1	0x7be	337	# (Private Data Elements)
+'00091073'	US	2	1	0x7ce	337	# (Private Data Elements)
+'00091074'	UL	4	1	0x7d8	337	# (Private Data Elements)
+'00091075'	UV	8	1	0x7e8	337	# (Private Data Elements)
+'00091076'	SS	8	4	0x7f8	337\-338\339\-340	# (Private Data Elements)
+'00091077'	SL	16	4	0x808	337\-338\339\-340	# (Private Data Elements)
+'00091078'	SV	32	4	0x824	337\-338\339\-340	# (Private Data Elements)
+'00091079'	US	8	4	0x84c	337\338\339\340	# (Private Data Elements)
+'0009107a'	UL	16	4	0x85c	337\338\339\340	# (Private Data Elements)
+'0009107b'	UV	32	4	0x878	337\338\339\340	# (Private Data Elements)
+'00100010'	PN	10	1	0x8a0	'SAMPLENAME'	# PatientName
+'0020000d'	UI	36	1	0x8b2	'1.2.826.0.1.3680043.8.417.1.99.10000'	# StudyInstanceUID
+'0020000e'	UI	38	1	0x8de	'1.2.826.0.1.3680043.8.417.1.99.10000.1'	# SeriesInstanceUID
+'00200010'	SH	0	0	0x90c	(no value)	# StudyID
+'00200011'	IS	0	0	0x914	(no value)	# SeriesNumber
+'00200013'	IS	2	1	0x91c	'1'	# InstanceNumber
+'00200032'	DS	16	3	0x926	'-275\-275\144.5'	# ImagePositionPatient
+'00200037'	DS	12	6	0x93e	'1\0\0\0\1\0'	# ImageOrientationPatient
+'00201041'	DS	8	1	0x952	'0.000000'	# SliceLocation
+'00280002'	US	2	1	0x962	1	# SamplesPerPixel
+'00280004'	CS	12	1	0x96c	'MONOCHROME2'	# PhotometricInterpretation
+'00280010'	US	2	1	0x980	4	# Rows
+'00280011'	US	2	1	0x98a	4	# Columns
+'00280030'	DS	4	2	0x994	'4\4'	# PixelSpacing
+'00280100'	US	2	1	0x9a0	16	# BitsAllocated
+'00280101'	US	2	1	0x9aa	16	# BitsStored
+'00280102'	US	2	1	0x9b4	15	# HighBit
+'00280103'	US	2	1	0x9be	1	# PixelRepresentation
+'00280106'	SS	2	1	0x9c8	0	# SmallestImagePixelValue
+'00280107'	SS	2	1	0x9d2	1	# LargestImagePixelValue
+'00281052'	DS	2	1	0x9dc	'0'	# RescaleIntercept
+'00281053'	DS	4	1	0x9e6	'1.0'	# RescaleSlope
+'00282110'	CS	2	1	0x9f2	'00'	# LossyImageCompression
+'7fe00010'	OW	32	1	0xa00	0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001\0001	# PixelData

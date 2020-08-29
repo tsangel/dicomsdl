@@ -337,6 +337,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("toDouble", &DataElement::toDouble, "default_value"_a = 0.0)
       .def("toDoubleVector", &DataElement::toDoubleVector)
       .def("toString", &DataElement::toString, "default_value"_a = L"")
+      .def("toStringVector", &DataElement::toStringVector)
       .def("value", [](DataElement &de) {
             py::object o;
             switch(de.vr()) {
@@ -344,16 +345,16 @@ PYBIND11_MODULE(_dicomsdl, m) {
                   case VR::SL:  case VR::UL:
                   case VR::SV:  case VR::UV:
                   case VR::IS:
-                    if (de.vm() > 1) {
+                    if (de.vm() > 1)
                       o = py::list(py::cast(de.toLongLongVector()));
-                    } else
+                    else
                       o = py::cast(de.toLongLong());
                     break;
                   case VR::FL:  case VR::FD:
                   case VR::DS:
-                    if (de.vm() > 1) {
+                    if (de.vm() > 1)
                       o = py::list(py::cast(de.toDoubleVector()));
-                    } else
+                    else
                       o = py::cast(de.toDouble());
                     break;
                   case VR::AE:
@@ -371,7 +372,10 @@ PYBIND11_MODULE(_dicomsdl, m) {
                   case VR::ST:
                   case VR::UC:
                   case VR::UT:
-                    o = py::cast(de.toString());
+                    if (de.vm() > 1)
+                      o = py::cast(de.toStringVector());
+                    else
+                      o = py::cast(de.toString());
                     break;
                   default:
                     o = py::bytes(de.toBytes());

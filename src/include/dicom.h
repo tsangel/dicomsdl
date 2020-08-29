@@ -334,6 +334,7 @@ class DataElement {
   /// string. May throw exception if error is occurred during unicode
   /// conversion.
   std::wstring toString(const wchar_t* default_value = L"");
+  std::vector<std::wstring> toStringVector();
 
   /// Returns value as string without conversion. Leading and trailing spaces
   /// are stripped according to the VR.

@@ -752,6 +752,104 @@ std::wstring DataElement::repr(size_t max_length)
   return reprstr;
 }
 
+std::vector<std::wstring> DataElement::toStringVector() {
+  std::vector<std::wstring> vec;
+
+  if (!isValid() || length_ == 0)
+    return vec;
+
+  int vecsize = vm();
+  vec.reserve(vecsize);
+  
+  if (vecsize == 1) {
+    vec.push_back(toString());
+    return vec;
+  }
+
+  charset_t charset;
+  DataSet *dataset = parent_;
+
+  switch (vr_) {
+    case VR::AE:
+    case VR::AS:
+    case VR::CS:
+    case VR::DA:
+    case VR::DS:
+    case VR::DT:
+    case VR::IS:
+    case VR::TM:
+    case VR::UI:
+    case VR::UR:
+      charset = CHARSET::DEFAULT;
+      break;
+
+    case VR::LO:
+    case VR::PN:
+    case VR::SH:
+    case VR::UC:
+      charset = parent_->getSpecificCharset();
+      break;
+    default:
+      LOGERROR_AND_THROW(
+          "DataElement::toStringVector - Value of a DataElement %s, VR %s "
+          "cannot be converted to unicode string vector.",
+          TAG::repr(tag_).c_str(), VR::repr(vr_));
+      break;
+  }
+
+  bool need_strip_leading_space = false;
+
+  switch (vr_){
+    case VR::AE:
+    case VR::AS:
+    case VR::CS:
+    case VR::DS:
+    case VR::DT:
+    case VR::IS:
+    case VR::LO:
+    case VR::PN:
+    case VR::SH:
+
+    case VR::DA:
+    case VR::TM:
+    case VR::UI: 
+      need_strip_leading_space = true;
+      break;
+    // case VR::UC:
+    default:
+      // other VR (i.e. VR::UC), keep leading spaces.
+      break;
+  }
+
+  char *p = (char *)value_ptr();
+  char *nextp;
+  int n = (int) length_; // remaining bytes
+  int i;
+
+  while (n > 0) {
+    for (i = 0; i < n; i++) {
+      if (p[i] == '\\')
+        break;
+    }
+    // i==n (end of string) or p[i]=='\\' (end of an item)
+    if (i == n) { // end of string
+      nextp = p + i;
+      n -= i;
+    } else { // end of an item
+      nextp = p + i + 1;
+      n -= (i + 1);
+    }
+
+    if (need_strip_leading_space) de_value_lstrip(&p, &i);
+    de_value_rstrip(&p, &i);
+    
+    vec.push_back(convert_to_unicode(p, i, charset));  // may throw error
+    p = nextp;
+  }
+
+  return vec;
+}
+
 std::wstring DataElement::toString(const wchar_t *default_value) {
   if (!isValid())
     return default_value;
@@ -761,7 +859,6 @@ std::wstring DataElement::toString(const wchar_t *default_value) {
 
   charset_t charset;
   std::wstring ws;
-  DataSet *dataset = parent_;
 
   char *p = (char *)value_ptr();
   int n = (int) length_;
@@ -830,14 +927,14 @@ std::wstring DataElement::toString(const wchar_t *default_value) {
     case VR::ST:
     case VR::UC:
     case VR::UT:
-      charset = dataset->getSpecificCharset();
+      charset = parent_->getSpecificCharset();
       ws = convert_to_unicode(p, n, charset);  // may throw error
       break;
 
     default:
       LOGERROR_AND_THROW(
           "DataElement::toString - Value of a DataElement %s, VR %s cannot be "
-          "convert to unicode string.",
+          "converted to unicode string.",
           TAG::repr(tag_).c_str(), VR::repr(vr_));
       break;
 
