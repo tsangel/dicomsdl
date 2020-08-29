@@ -5,9 +5,10 @@ import os
 import numpy as np
 
 IS_PY3 = version_info.major >= 3
-
 from ._dicomsdl import *
 from . import util
+
+__version__ = version
 
 def __dataset__getitem__(self, tagstr):
   de = self.getDataElement(tagstr)

@@ -26,6 +26,8 @@ struct Iterator {
 };
 
 PYBIND11_MODULE(_dicomsdl, m) {
+  m.attr("version") = py::cast(DICOMSDL_VERSION);
+
   m.def("open_file", &open_file, "Open a DICOM file from a file.", "filename"_a,
         "load_until"_a = 0xffffffff, "keep_on_error"_a = false);
   m.def(
