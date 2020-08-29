@@ -176,7 +176,7 @@ void PixelSequence::readOffsetTable()
       size_t startpos = offsets[i];
       size_t endpos = temp_offset_map[offsets[i]];
       if (endpos == 0)
-        endpos = instream->bytes_remaining();
+        endpos = startpos+instream->bytes_remaining();
       frames_.push_back(
           std::unique_ptr<PixelFrame>(new PixelFrame(base_offset_ + startpos)));
       frame = frames_.back().get();
