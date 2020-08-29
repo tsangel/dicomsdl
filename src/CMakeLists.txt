@@ -191,4 +191,6 @@ ENDIF (PYTHON_BUILD_EXT)
 # ------------------------------------------------------------------------------
 # Build examples
 
-ADD_SUBDIRECTORY(example)
+IF (PYTHON_BUILD_EXAMPLE)
+	ADD_SUBDIRECTORY(example)
+ENDIF (PYTHON_BUILD_EXAMPLE)

@@ -38,6 +38,9 @@ OPTION(USE_DEBUG_MESSAGE
 OPTION(PYTHON_BUILD_EXT
 		"Build python extension" ON)
 
+OPTION(PYTHON_BUILD_EXAMPLE
+		"Build c++ example" OFF)
+
 OPTION(USE_SSE
 		"Use __SSE__" ON)
 
