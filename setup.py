@@ -74,6 +74,11 @@ setup(
     packages=find_packages('src/python'),
     package_dir={"dicomsdl":"src/python/dicomsdl"},
     ext_modules=[CMakeExtension('dicomsdl.dicomsdl')],
+    entry_points={
+        "console_scripts" : [
+            "dicomdump=dicomsdl.dump:main",
+            "dicomshow=dicomsdl.show:main",
+        ]},
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
 )
