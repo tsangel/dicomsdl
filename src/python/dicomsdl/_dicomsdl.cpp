@@ -148,26 +148,26 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .value("UNKNOWN", UID::UNKNOWN)
       .export_values()
       .def("__str__", [](const UID::type vr) { return UID::to_uidname(vr); });
-  uid.def("uidvalue_to_uidname", &UID::uidvalue_to_uidname,
+  uid.def_static("uidvalue_to_uidname", &UID::uidvalue_to_uidname,
           "Convert UID value to UID name. e.g. '1.2.840.10008.1.2.1' -> "
           "'Explicit VR Little Endian'");
-  uid.def("to_uidname", &UID::to_uidname,
+  uid.def_static("to_uidname", &UID::to_uidname,
           "Convert UID to UID name. e.g. UID.EXPLICIT_VR_LITTLE_ENDIAN -> "
           "'Explicit VR Little Endian'");
-  uid.def("to_uidvalue", &UID::to_uidvalue,
+  uid.def_static("to_uidvalue", &UID::to_uidvalue,
           "Convert UID to UID value. e.g. UID.EXPLICIT_VR_LITTLE_ENDxIAN -> "
           "'1.2.840.10008.1.2.1'");
-  uid.def("from_uidvalue", &UID::from_uidvalue,
+  uid.def_static("from_uidvalue", &UID::from_uidvalue,
           "Convert UID valud to tsuid. e.g. '1.2.840.10008.1.2.1' -> "
           "UID.EXPLICIT_VR_LITTLE_ENDIAN");
 
   py::class_<TAG>(m, "TAG")
-      .def("get_vr", &TAG::get_vr, "Get Tag's VR. e.g. 0x00080008 -> VR.CS")
-      .def("keyword", &TAG::keyword,
+      .def_static("get_vr", &TAG::get_vr, "Get Tag's VR. e.g. 0x00080008 -> VR.CS")
+      .def_static("keyword", &TAG::keyword,
            "Get Tag's Keyword. e.g. 0x00080008 -> 'ImageType'")
-      .def("name", &TAG::name,
+      .def_static("name", &TAG::name,
            "Get Tag's Name. e.g. 0x00080008 -> 'Image Type'")
-      .def("from_keyword", &TAG::from_keyword,
+      .def_static("from_keyword", &TAG::from_keyword,
            "Get a Tag from Keyword. e.g. 'ImageType' -> 0x00080008");
 
   py::class_<CHARSET> charset(m, "CHARSET");
@@ -227,7 +227,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .value("UTF8", CHARSET::UTF8)
       .value("UNKNOWN", CHARSET::UNKNOWN)      
       .export_values();
-  charset.def("from_string",
+  charset.def_static("from_string",
               (charset_t(*)(const std::string &)) & CHARSET::from_string,
               "Get a Specific Character Set from UID value");
 
