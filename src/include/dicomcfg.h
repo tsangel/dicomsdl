@@ -32,7 +32,7 @@ typedef double float64_t;
 
 namespace dicom {
 
-const char *const DICOMSDL_VERSION = "0.106.6";
+const char *const DICOMSDL_VERSION = "0.106.7";
 
 const char *const DICOMSDL_UIDPREFIX = "1.2.826.0.1.3680043.8.417.1";
 const char *const DICOMSDL_IMPLCLASSUID = "1.2.826.0.1.3680043.8.417.1.1";
@@ -151,16 +151,16 @@ const char *const DICOMSDL_FILESETID = "DICOMDIR";
 
 #if __BYTE_ORDER==__LITTLE_ENDIAN
 template <typename T>
-inline T read_le(void *p) {
+inline T load_le(void *p) {
   return *(T *)(p);
 }
 template <typename T>
-inline T write_le(void *p, T v) {
+inline T store_le(void *p, T v) {
   *(T *)(p) = v;
 }
 
 template <typename T>
-inline T read_be(void *p) {
+inline T load_be(void *p) {
   if (sizeof(T) == 2) {
     uint16_t t = bswap16(*(uint16_t *)p);
     return *(T *)(&t);
@@ -175,7 +175,7 @@ inline T read_be(void *p) {
   }
 }
 template <typename T>
-inline T write_be(void *p, T v) {
+inline T store_be(void *p, T v) {
   if (sizeof(T) == 2) {
     uint16_t t;
     *(T *)&t = v;
@@ -195,16 +195,16 @@ inline T write_be(void *p, T v) {
 
 #elif __BYTE_ORDER==__BIG_ENDIAN
 template <typename T>
-inline T read_be(void *p) {
+inline T load_be(void *p) {
   return *(T *)(p);
 }
 template <typename T>
-inline T write_be(void *p, T v) {
+inline T store_be(void *p, T v) {
   *(T *)(p) = v;
 }
 
 template <typename T>
-inline T read_le(void *p) {
+inline T load_le(void *p) {
   if (sizeof(T) == 2) {
     uint16_t t = bswap16(*(uint16_t *)p);
     return *(T *)(&t);
@@ -219,7 +219,7 @@ inline T read_le(void *p) {
   }
 }
 template <typename T>
-inline T write_le(void *p, T v) {
+inline T store_le(void *p, T v) {
   if (sizeof(T) == 2) {
     uint16_t t;
     *(T *)&t = v;
@@ -240,12 +240,12 @@ inline T write_le(void *p, T v) {
 #endif
 
 template <typename T>
-inline T read_e(void *p, bool is_little_endian) {
-  return (is_little_endian ? read_le<T>(p) : read_be<T>(p));
+inline T load_e(void *p, bool is_little_endian) {
+  return (is_little_endian ? load_le<T>(p) : load_be<T>(p));
 }
 template <typename T>
-inline T write_e(void *p, T v, bool is_little_endian) {
-  return (is_little_endian ? write_le<T>(p, v) : write_be<T>(p, v));
+inline T store_e(void *p, T v, bool is_little_endian) {
+  return (is_little_endian ? store_le<T>(p, v) : store_be<T>(p, v));
 }
 
 /* pointer to value macro --------------------------------------------------- */

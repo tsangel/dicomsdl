@@ -310,11 +310,11 @@ void DataSet::load(tag_t load_until, InStream *instream) {
     }
 
     if (is_little_endian_) {
-      gggg = read_le<uint16_t>(buf8_);
-      eeee = read_le<uint16_t>(buf8_ + 2);
+      gggg = load_le<uint16_t>(buf8_);
+      eeee = load_le<uint16_t>(buf8_ + 2);
     } else {
-      gggg = read_be<uint16_t>(buf8_);
-      eeee = read_be<uint16_t>(buf8_ + 2);
+      gggg = load_be<uint16_t>(buf8_);
+      eeee = load_be<uint16_t>(buf8_ + 2);
     }
     tag = TAG::build(gggg, eeee);
 
@@ -365,7 +365,7 @@ void DataSet::load(tag_t load_until, InStream *instream) {
     // DATA ELEMENT STRUCTURE WITH EXPLICIT VR
     if (is_vr_explicit_) {
       vr = VR::from_uint16le(uint16_t(buf8_[4])+uint16_t(buf8_[5])*256);
-      length = read_e<uint16_t>(buf8_ + 6, is_little_endian_);
+      length = load_e<uint16_t>(buf8_ + 6, is_little_endian_);
 
       switch (vr) {
         case VR::FL:
@@ -419,7 +419,7 @@ void DataSet::load(tag_t load_until, InStream *instream) {
                 "DataSet::load - cannot read 4 bytes for data element value's "
                 "length at {%x}",
                 instream->tell());
-          length = read_e<uint32_t>(buf4, is_little_endian_);
+          length = load_e<uint32_t>(buf4, is_little_endian_);
           break;
 
         case VR::UT:
@@ -430,10 +430,10 @@ void DataSet::load(tag_t load_until, InStream *instream) {
                 "DataSet::load - cannot read 4 bytes for data element value's "
                 "length at {%x}",
                 instream->tell());
-          length = read_e<uint32_t>(buf4, is_little_endian_);
+          length = load_e<uint32_t>(buf4, is_little_endian_);
           if (length > instream->bytes_remaining()) {
             instream->unread(4);
-            length = read_e<uint16_t>(buf8_ + 6, is_little_endian_);
+            length = load_e<uint16_t>(buf8_ + 6, is_little_endian_);
           }
           break;
 
@@ -447,7 +447,7 @@ void DataSet::load(tag_t load_until, InStream *instream) {
             // assume this Data Element has implicit vr
             // PS 3.5-2009, Table 7.1-3
             // DATA ELEMENT STRUCTURE WITH IMPLICIT VR
-            length = read_le<uint32_t>(buf8_ + 4);
+            length = load_le<uint32_t>(buf8_ + 4);
 
             vr = TAG::get_vr(tag);
             if (vr == VR::NONE) vr = VR::UN;
@@ -459,7 +459,7 @@ void DataSet::load(tag_t load_until, InStream *instream) {
       // DATA ELEMENT STRUCTURE WITH IMPLICIT VR
 
       // always little endian if vr is implicit.
-      length = read_le<uint32_t>(buf8_ + 4);
+      length = load_le<uint32_t>(buf8_ + 4);
 
       vr = TAG::get_vr(tag);
       if (vr == VR::NONE) vr = VR::UN;

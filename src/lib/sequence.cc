@@ -63,7 +63,7 @@ void Sequence::load(InStream *instream) {
     tag_t tag;
     size_t length, offset;
 
-    tag = TAG::read_32e(buf, is_little_endian_);
+    tag = TAG::load_32e(buf, is_little_endian_);
 
     // Sequence Delimitation Item
     if (tag == 0xfffee0dd)  // Seq. Delim. Tag (FFFE, E0DD)
@@ -83,7 +83,7 @@ void Sequence::load(InStream *instream) {
     // PS3.3 Table F.3-3. Directory Information Module Attributes
     // This offset includes the File Preamble and the DICM Prefix.
     offset = instream->tell();
-    length = read_e<uint32_t>(buf + 4, is_little_endian_);
+    length = load_e<uint32_t>(buf + 4, is_little_endian_);
 
     if (length == 0xffffffff) length = instream->bytes_remaining();
 

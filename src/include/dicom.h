@@ -69,15 +69,15 @@ struct TAG {
     return (tag_t(gggg) << 16) + eeee;
   }
 
-  inline static tag_t read_32le(void* p) {
-    return build(read_le<uint16_t>(p), read_le<uint16_t>((uint8_t*)(p) + 2));
+  inline static tag_t load_32le(void* p) {
+    return build(load_le<uint16_t>(p), load_le<uint16_t>((uint8_t*)(p) + 2));
   }
 
-  inline static tag_t read_32e(void* p, bool is_little_endian) {
+  inline static tag_t load_32e(void* p, bool is_little_endian) {
     if (is_little_endian)
-      return build(read_le<uint16_t>(p), read_le<uint16_t>((uint8_t*)(p) + 2));
+      return build(load_le<uint16_t>(p), load_le<uint16_t>((uint8_t*)(p) + 2));
     else
-      return build(read_be<uint16_t>(p), read_be<uint16_t>((uint8_t*)(p) + 2));
+      return build(load_be<uint16_t>(p), load_be<uint16_t>((uint8_t*)(p) + 2));
   }
 
   inline static uint16_t group(tag_t tag) { return (uint16_t)(tag >> 16); }

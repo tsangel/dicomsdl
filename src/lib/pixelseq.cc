@@ -67,9 +67,9 @@ void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
     }
 
     // Item Tag​ (FFFE,E000) or (FFFE,E0DD)
-    tag = TAG::read_32le(buf);
+    tag = TAG::load_32le(buf);
     // Item Length (4 bytes)
-    length = read_le<uint32_t>(buf + 4);
+    length = load_le<uint32_t>(buf + 4);
 
     remaining_bytes -= 8;
 
@@ -121,8 +121,8 @@ void PixelSequence::readOffsetTable()
         "PixelSequence::readOffsetTable - cannot read 8 bytes from {%#x}",
         instream->tell());
 
-  tag = TAG::read_32le(buf);
-  length = read_le<uint32_t>(buf + 4);
+  tag = TAG::load_32le(buf);
+  length = load_le<uint32_t>(buf + 4);
 
   // Assert Tag is 'Item Tag'
   if (tag != 0xfffee000)
@@ -203,7 +203,7 @@ void PixelSequence::readOffsetTable()
       frame->load(instream, instream->bytes_remaining(), buf);
 
       // last frame->load store tag/length information to the buf
-      tag = TAG::read_32le(buf);
+      tag = TAG::load_32le(buf);
 
       if (tag == 0xfffee0dd)
         break;

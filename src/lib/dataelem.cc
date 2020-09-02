@@ -82,27 +82,27 @@ long DataElement::toLong(long default_value) {
   switch (vr_) {
     case VR::SS:
       value = (length_ >= 2
-                   ? (is_little_endian ? read_le<int16_t>(ptr) : read_be<int16_t>(ptr))
+                   ? (is_little_endian ? load_le<int16_t>(ptr) : load_be<int16_t>(ptr))
                    : default_value);
       break;
     case VR::US:
       value = (length_ >= 2
-                   ? (is_little_endian ? read_le<uint16_t>(ptr) : read_be<uint16_t>(ptr))
+                   ? (is_little_endian ? load_le<uint16_t>(ptr) : load_be<uint16_t>(ptr))
                    : default_value);
       break;
     case VR::SL:
       value = (length_ >= 4
-                   ? (is_little_endian ? read_le<int32_t>(ptr) : read_be<int32_t>(ptr))
+                   ? (is_little_endian ? load_le<int32_t>(ptr) : load_be<int32_t>(ptr))
                    : default_value);
       break;
     case VR::UL:
       value = (length_ >= 4
-                   ? (is_little_endian ? read_le<uint32_t>(ptr) : read_be<uint32_t>(ptr))
+                   ? (is_little_endian ? load_le<uint32_t>(ptr) : load_be<uint32_t>(ptr))
                    : default_value);
       break;
     case VR::AT:
       value = (length_ >= 4
-                   ? (is_little_endian ? read_le<uint32_t>(ptr) : read_be<uint32_t>(ptr))
+                   ? (is_little_endian ? load_le<uint32_t>(ptr) : load_be<uint32_t>(ptr))
                    : default_value);
       if (is_little_endian) {
         uint16_t hi = value >> 16;
@@ -112,12 +112,12 @@ long DataElement::toLong(long default_value) {
       break;
     case VR::SV:
       value = (length_ >= 8
-                   ? (is_little_endian ? read_le<int64_t>(ptr) : read_be<int64_t>(ptr))
+                   ? (is_little_endian ? load_le<int64_t>(ptr) : load_be<int64_t>(ptr))
                    : default_value);
       break;
     case VR::UV:
       value = (length_ >= 8
-                   ? (is_little_endian ? read_le<uint64_t>(ptr) : read_be<uint64_t>(ptr))
+                   ? (is_little_endian ? load_le<uint64_t>(ptr) : load_be<uint64_t>(ptr))
                    : default_value);
       break;
     case VR::IS:
@@ -150,27 +150,27 @@ long long DataElement::toLongLong(long long default_value) {
   switch (vr_) {
     case VR::SS:
       value = (length_ >= 2
-                   ? (is_little_endian ? read_le<int16_t>(ptr) : read_be<int16_t>(ptr))
+                   ? (is_little_endian ? load_le<int16_t>(ptr) : load_be<int16_t>(ptr))
                    : default_value);
       break;
     case VR::US:
       value = (length_ >= 2
-                   ? (is_little_endian ? read_le<uint16_t>(ptr) : read_be<uint16_t>(ptr))
+                   ? (is_little_endian ? load_le<uint16_t>(ptr) : load_be<uint16_t>(ptr))
                    : default_value);
       break;
     case VR::SL:
       value = (length_ >= 4
-                   ? (is_little_endian ? read_le<int32_t>(ptr) : read_be<int32_t>(ptr))
+                   ? (is_little_endian ? load_le<int32_t>(ptr) : load_be<int32_t>(ptr))
                    : default_value);
       break;
     case VR::UL:
       value = (length_ >= 4
-                   ? (is_little_endian ? read_le<uint32_t>(ptr) : read_be<uint32_t>(ptr))
+                   ? (is_little_endian ? load_le<uint32_t>(ptr) : load_be<uint32_t>(ptr))
                    : default_value);
       break;
     case VR::AT:
-      value = (length_ >= 4 ? (is_little_endian ? read_le<uint32_t>(ptr)
-                                                : read_be<uint32_t>(ptr))
+      value = (length_ >= 4 ? (is_little_endian ? load_le<uint32_t>(ptr)
+                                                : load_be<uint32_t>(ptr))
                             : default_value);
       if (is_little_endian) {
         uint16_t hi = value >> 16;
@@ -180,12 +180,12 @@ long long DataElement::toLongLong(long long default_value) {
       break;
     case VR::SV:
       value = (length_ >= 8
-                   ? (is_little_endian ? read_le<int64_t>(ptr) : read_be<int64_t>(ptr))
+                   ? (is_little_endian ? load_le<int64_t>(ptr) : load_be<int64_t>(ptr))
                    : default_value);
       break;
     case VR::UV:
       value = (length_ >= 8
-                   ? (is_little_endian ? read_le<uint64_t>(ptr) : read_be<uint64_t>(ptr))
+                   ? (is_little_endian ? load_le<uint64_t>(ptr) : load_be<uint64_t>(ptr))
                    : default_value);
       break;
     case VR::IS:
@@ -212,11 +212,11 @@ long long DataElement::toLongLong(long long default_value) {
     vec.reserve(nvalues);                                \
     if (is_little_endian) {                             \
       for (int i = 0; i < nvalues; i++) {               \
-        vec.push_back(read_le<TYPE>(((TYPE *)ptr) + i)); \
+        vec.push_back(load_le<TYPE>(((TYPE *)ptr) + i)); \
       }                                                 \
     } else {                                            \
       for (int i = 0; i < nvalues; i++) {               \
-        vec.push_back(read_be<TYPE>(((TYPE *)ptr) + i)); \
+        vec.push_back(load_be<TYPE>(((TYPE *)ptr) + i)); \
       }                                                 \
     }                                                   \
   }
@@ -376,13 +376,13 @@ double DataElement::toDouble(double default_value) {
     case VR::FL:
     case VR::OF:
       value = (length_ >= 4
-                   ? (is_little_endian ? read_le<float32_t>(ptr) : read_be<float32_t>(ptr))
+                   ? (is_little_endian ? load_le<float32_t>(ptr) : load_be<float32_t>(ptr))
                    : default_value);
       break;
     case VR::FD:
     case VR::OD:
       value = (length_ >= 8
-                   ? (is_little_endian ? read_le<float64_t>(ptr) : read_be<float64_t>(ptr))
+                   ? (is_little_endian ? load_le<float64_t>(ptr) : load_be<float64_t>(ptr))
                    : default_value);
       break;
     case VR::DS:
