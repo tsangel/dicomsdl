@@ -1128,4 +1128,25 @@ struct jpeg_color_quantizer { long dummy; };
 #include "jerror.h"		/* fetch error codes too */
 #endif
 
+/* Added lines in dicomsdl to prevent error
+ * "implicit declaration of function 'function_xxx' is invalid in C99".
+ * ----------------------------------------------------------------------- start
+ */
+
+GLOBAL(void)
+jinit_c_codec (j_compress_ptr cinfo);
+GLOBAL(void)
+jinit_d_codec (j_decompress_ptr cinfo);
+GLOBAL(void) 
+jinit_lossless_c_codec(j_compress_ptr cinfo);
+GLOBAL(void) 
+jinit_lossless_d_codec(j_decompress_ptr cinfo);
+GLOBAL(void)
+jinit_c_diff_controller (j_compress_ptr cinfo, boolean need_full_buffer);
+GLOBAL(void)
+jinit_d_diff_controller (j_decompress_ptr cinfo, boolean need_full_buffer);
+
+/* ---------------------------------------------------------------------- end */
+
+
 #endif /* JPEGLIB_H */

@@ -9,11 +9,11 @@
 
 #include "pybind11_tests.h"
 
-// A type that should be raised as an exeption in Python
+// A type that should be raised as an exception in Python
 class MyException : public std::exception {
 public:
     explicit MyException(const char * m) : message{m} {}
-    virtual const char * what() const noexcept override {return message.c_str();}
+    const char * what() const noexcept override {return message.c_str();}
 private:
     std::string message = "";
 };
@@ -22,7 +22,7 @@ private:
 class MyException2 : public std::exception {
 public:
     explicit MyException2(const char * m) : message{m} {}
-    virtual const char * what() const noexcept override {return message.c_str();}
+    const char * what() const noexcept override {return message.c_str();}
 private:
     std::string message = "";
 };
@@ -41,7 +41,7 @@ private:
 class MyException4 : public std::exception {
 public:
     explicit MyException4(const char * m) : message{m} {}
-    virtual const char * what() const noexcept override {return message.c_str();}
+    const char * what() const noexcept override {return message.c_str();}
 private:
     std::string message = "";
 };
@@ -58,48 +58,6 @@ class MyException5_1 : public MyException5 {
     using MyException5::MyException5;
 };
 
-void throws1() {
-    throw MyException("this error should go to a custom type");
-}
-
-void throws2() {
-    throw MyException2("this error should go to a standard Python exception");
-}
-
-void throws3() {
-    throw MyException3("this error cannot be translated");
-}
-
-void throws4() {
-    throw MyException4("this error is rethrown");
-}
-
-void throws5() {
-    throw MyException5("this is a helper-defined translated exception");
-}
-
-void throws5_1() {
-    throw MyException5_1("MyException5 subclass");
-}
-
-void throws_logic_error() {
-    throw std::logic_error("this error should fall through to the standard handler");
-}
-
-// Test error_already_set::matches() method
-void exception_matches() {
-    py::dict foo;
-    try {
-        foo["bar"];
-    }
-    catch (py::error_already_set& ex) {
-        if (ex.matches(PyExc_KeyError))
-            ex.clear();
-        else
-            throw;
-    }
-}
-
 struct PythonCallInDestructor {
     PythonCallInDestructor(const py::dict &d) : d(d) {}
     ~PythonCallInDestructor() { d["good"] = true; }
@@ -107,7 +65,30 @@ struct PythonCallInDestructor {
     py::dict d;
 };
 
-test_initializer custom_exceptions([](py::module &m) {
+
+
+struct PythonAlreadySetInDestructor {
+    PythonAlreadySetInDestructor(const py::str &s) : s(s) {}
+    ~PythonAlreadySetInDestructor() {
+        py::dict foo;
+        try {
+            // Assign to a py::object to force read access of nonexistent dict entry
+            py::object o = foo["bar"];
+        }
+        catch (py::error_already_set& ex) {
+            ex.discard_as_unraisable(s);
+        }
+    }
+
+    py::str s;
+};
+
+
+TEST_SUBMODULE(exceptions, m) {
+    m.def("throw_std_exception", []() {
+        throw std::runtime_error("This exception was intentionally thrown.");
+    });
+
     // make a new custom exception and use it as a translation target
     static py::exception<MyException> ex(m, "MyException");
     py::register_exception_translator([](std::exception_ptr p) {
@@ -147,14 +128,49 @@ test_initializer custom_exceptions([](py::module &m) {
     // A slightly more complicated one that declares MyException5_1 as a subclass of MyException5
     py::register_exception<MyException5_1>(m, "MyException5_1", ex5.ptr());
 
-    m.def("throws1", &throws1);
-    m.def("throws2", &throws2);
-    m.def("throws3", &throws3);
-    m.def("throws4", &throws4);
-    m.def("throws5", &throws5);
-    m.def("throws5_1", &throws5_1);
-    m.def("throws_logic_error", &throws_logic_error);
-    m.def("exception_matches", &exception_matches);
+    m.def("throws1", []() { throw MyException("this error should go to a custom type"); });
+    m.def("throws2", []() { throw MyException2("this error should go to a standard Python exception"); });
+    m.def("throws3", []() { throw MyException3("this error cannot be translated"); });
+    m.def("throws4", []() { throw MyException4("this error is rethrown"); });
+    m.def("throws5", []() { throw MyException5("this is a helper-defined translated exception"); });
+    m.def("throws5_1", []() { throw MyException5_1("MyException5 subclass"); });
+    m.def("throws_logic_error", []() { throw std::logic_error("this error should fall through to the standard handler"); });
+    m.def("throws_overflow_error", []() {throw std::overflow_error(""); });
+    m.def("exception_matches", []() {
+        py::dict foo;
+        try {
+            // Assign to a py::object to force read access of nonexistent dict entry
+            py::object o = foo["bar"];
+        }
+        catch (py::error_already_set& ex) {
+            if (!ex.matches(PyExc_KeyError)) throw;
+            return true;
+        }
+        return false;
+    });
+    m.def("exception_matches_base", []() {
+        py::dict foo;
+        try {
+            // Assign to a py::object to force read access of nonexistent dict entry
+            py::object o = foo["bar"];
+        }
+        catch (py::error_already_set &ex) {
+            if (!ex.matches(PyExc_Exception)) throw;
+            return true;
+        }
+        return false;
+    });
+    m.def("modulenotfound_exception_matches_base", []() {
+        try {
+            // On Python >= 3.6, this raises a ModuleNotFoundError, a subclass of ImportError
+            py::module::import("nonexistent");
+        }
+        catch (py::error_already_set &ex) {
+            if (!ex.matches(PyExc_ImportError)) throw;
+            return true;
+        }
+        return false;
+    });
 
     m.def("throw_already_set", [](bool err) {
         if (err)
@@ -185,4 +201,24 @@ test_initializer custom_exceptions([](py::module &m) {
         }
         return false;
     });
-});
+
+    m.def("python_alreadyset_in_destructor", [](py::str s) {
+        PythonAlreadySetInDestructor alreadyset_in_destructor(s);
+        return true;
+    });
+
+    // test_nested_throws
+    m.def("try_catch", [m](py::object exc_type, py::function f, py::args args) {
+        try { f(*args); }
+        catch (py::error_already_set &ex) {
+            if (ex.matches(exc_type))
+                py::print(ex.what());
+            else
+                throw;
+        }
+    });
+
+    // Test repr that cannot be displayed
+    m.def("simple_bool_passthrough", [](bool x) {return x;});
+
+}

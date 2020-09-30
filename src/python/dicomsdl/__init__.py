@@ -114,3 +114,4 @@ def __dataset__to_pil_image(self, index=0):
 
   return Image.fromarray(data8)
 DataSet.to_pil_image = __dataset__to_pil_image
+

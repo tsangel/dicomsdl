@@ -33,7 +33,7 @@ DataElement::DataElement(tag_t tag, vr_t vr, size_t length, size_t offset, DataS
   LOG_DEBUG(
       "++ @%p\tDataElement::DataElement(...)\t%s, %s, len %d, offset {%08x}, "
       "ptr %p, parent %p",
-      this, TAG::repr(tag_).c_str(), repr(vr_), length_, offset_, ptr_,
+      this, TAG::repr(tag_).c_str(), VR::repr(vr_), length_, offset_, ptr_,
       parent_);
 }
 
