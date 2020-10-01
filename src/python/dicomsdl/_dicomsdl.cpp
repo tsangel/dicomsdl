@@ -25,6 +25,55 @@ struct Iterator {
   bool first_or_done;
 };
 
+py::object dataelement_value(DataElement &de) {
+  py::object o;
+  switch (de.vr()) {
+    case VR::SS:
+    case VR::US:
+    case VR::SL:
+    case VR::UL:
+    case VR::SV:
+    case VR::UV:
+    case VR::IS:
+      if (de.vm() > 1)
+        o = py::list(py::cast(de.toLongLongVector()));
+      else
+        o = py::cast(de.toLongLong());
+      break;
+    case VR::FL:
+    case VR::FD:
+    case VR::DS:
+      if (de.vm() > 1)
+        o = py::list(py::cast(de.toDoubleVector()));
+      else
+        o = py::cast(de.toDouble());
+      break;
+    case VR::AE:
+    case VR::AS:
+    case VR::CS:
+    case VR::DA:
+    case VR::DT:
+    case VR::TM:
+    case VR::UI:
+    case VR::UR:
+    case VR::LO:
+    case VR::LT:
+    case VR::PN:
+    case VR::SH:
+    case VR::ST:
+    case VR::UC:
+    case VR::UT:
+      if (de.vm() > 1)
+        o = py::cast(de.toStringVector());
+      else
+        o = py::cast(de.toString());
+      break;
+    default:
+      o = py::bytes(de.toBytes());
+  }
+  return o;
+}
+
 PYBIND11_MODULE(_dicomsdl, m) {
   m.attr("version") = py::cast(DICOMSDL_VERSION);
 
@@ -162,13 +211,20 @@ PYBIND11_MODULE(_dicomsdl, m) {
           "UID.EXPLICIT_VR_LITTLE_ENDIAN");
 
   py::class_<TAG>(m, "TAG")
-      .def_static("get_vr", &TAG::get_vr, "Get Tag's VR. e.g. 0x00080008 -> VR.CS")
+      .def_static(
+          "repr", &TAG::repr,
+          "Get Tag's representative string. e.g. 0x00080008 -> (0008,0008)")
+      .def_static(
+          "str", &TAG::repr,
+          "Get Tag's representative string. e.g. 0x00080008 -> (0008,0008)")
+      .def_static("get_vr", &TAG::get_vr,
+                  "Get Tag's VR. e.g. 0x00080008 -> VR.CS")
       .def_static("keyword", &TAG::keyword,
-           "Get Tag's Keyword. e.g. 0x00080008 -> 'ImageType'")
+                  "Get Tag's Keyword. e.g. 0x00080008 -> 'ImageType'")
       .def_static("name", &TAG::name,
-           "Get Tag's Name. e.g. 0x00080008 -> 'Image Type'")
+                  "Get Tag's Name. e.g. 0x00080008 -> 'Image Type'")
       .def_static("from_keyword", &TAG::from_keyword,
-           "Get a Tag from Keyword. e.g. 'ImageType' -> 0x00080008");
+                  "Get a Tag from Keyword. e.g. 'ImageType' -> 0x00080008");
 
   py::class_<CHARSET> charset(m, "CHARSET");
   py::enum_<CHARSET::type>(charset, "type")
@@ -317,6 +373,8 @@ PYBIND11_MODULE(_dicomsdl, m) {
 
   // class DataElement ---------------------------------------------------------
 
+
+
   py::class_<DataElement>(m, "DataElement")
       .def("length", &DataElement::length)
       .def("vr", &DataElement::vr)
@@ -340,50 +398,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("toDoubleVector", &DataElement::toDoubleVector)
       .def("toString", &DataElement::toString, "default_value"_a = L"")
       .def("toStringVector", &DataElement::toStringVector)
-      .def("value", [](DataElement &de) {
-            py::object o;
-            switch(de.vr()) {
-                  case VR::SS:  case VR::US:
-                  case VR::SL:  case VR::UL:
-                  case VR::SV:  case VR::UV:
-                  case VR::IS:
-                    if (de.vm() > 1)
-                      o = py::list(py::cast(de.toLongLongVector()));
-                    else
-                      o = py::cast(de.toLongLong());
-                    break;
-                  case VR::FL:  case VR::FD:
-                  case VR::DS:
-                    if (de.vm() > 1)
-                      o = py::list(py::cast(de.toDoubleVector()));
-                    else
-                      o = py::cast(de.toDouble());
-                    break;
-                  case VR::AE:
-                  case VR::AS:
-                  case VR::CS:
-                  case VR::DA:
-                  case VR::DT:
-                  case VR::TM:
-                  case VR::UI:
-                  case VR::UR:
-                  case VR::LO:
-                  case VR::LT:
-                  case VR::PN:
-                  case VR::SH:
-                  case VR::ST:
-                  case VR::UC:
-                  case VR::UT:
-                    if (de.vm() > 1)
-                      o = py::cast(de.toStringVector());
-                    else
-                      o = py::cast(de.toString());
-                    break;
-                  default:
-                    o = py::bytes(de.toBytes());
-            }
-            return o;
-      });
+      .def("value", &dataelement_value);
 
   // class DataSet -------------------------------------------------------------
 
@@ -421,7 +436,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("removeDataElement", &DataSet::removeDataElement)
       .def("attachToFile", &DataSet::attachToFile)
       .def("attachToMemory", &DataSet::attachToMemory)
-      .def("dump", &DataSet::dump, "max_length"_a=120)
+      .def("dump", &DataSet::dump, "max_length"_a = 120)
       .def(
           "__iter__",
           [](DataSet &ds) {
@@ -513,6 +528,28 @@ PYBIND11_MODULE(_dicomsdl, m) {
                }
              }
            })
+      .def("getValues",
+           [](DataSet &ds, py::list tags) {
+             auto values = py::list();
+             for (auto tagobj : tags) {
+               DataElement *de;
+               if (py::isinstance<py::int_>(tagobj)) {
+                 tag_t tag = int(py::reinterpret_borrow<py::int_>(tagobj));
+                 de = ds.getDataElement(tag);
+               } else if (py::isinstance<py::str>(tagobj)) {
+                 std::string tagstr =
+                     std::string(py::reinterpret_borrow<py::str>(tagobj));
+                 de = ds.getDataElement(tagstr.c_str());
+               } else {
+                 throw std::runtime_error("tag should be int or str.");
+               }
+               if (de->isValid())
+                 values.append(dataelement_value(*de));
+               else
+                 values.append(py::cast<py::none>(Py_None));
+             }
+             return values;
+           })
       .def("getPixelDataInfo",
            [](DataSet &ds) {
              DataElement *de;
@@ -594,7 +631,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
                  return objnone;
                }
 
-               py::list li;
+               auto li = py::list();
                int seqsize = seq->size();
                for (int i = 0; i < seqsize; ++i) {
                  snprintf(buf, 128, "%08x.0.%08x", macro_tag, tag);
