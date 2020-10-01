@@ -17,7 +17,9 @@ stack: python 3.7
 init:
 - cmd: set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
 
-install: python -m pip install cibuildwheel==1.5.5
+install:
+- git submodule update --init --recursive
+- python -m pip install cibuildwheel==1.5.5
 
 build_script: python -m cibuildwheel --output-dir wheelhouse
 
