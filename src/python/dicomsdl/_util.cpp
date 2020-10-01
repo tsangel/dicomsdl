@@ -78,6 +78,12 @@ PYBIND11_MODULE(_util, m) {
               inbuf.shape[0] * inbuf.strides[0], inbuf.strides[0],
               (uint8_t *)outbuf.ptr, outbuf.shape[0] * outbuf.strides[0],
               outbuf.strides[0], xmin, xmax);
+        } else if (py::isinstance<py::array_t<uint8_t>>(inarray)) {
+          convert_to_uint8<uint8_t>(
+              (uint8_t *)inbuf.ptr, inbuf.shape[0], inbuf.shape[1],
+              inbuf.shape[0] * inbuf.strides[0], inbuf.strides[0],
+              (uint8_t *)outbuf.ptr, outbuf.shape[0] * outbuf.strides[0],
+              outbuf.strides[0], xmin, xmax);
         } else {
           py::pybind11_fail(
               "only int16_t, uint16_t, and float32_t are supported");

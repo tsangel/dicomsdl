@@ -40,7 +40,7 @@ c=0, w=1 becomes:
   else if (x > -0.5) then y = 255
   else // not reached
 
-* Above case is not working well if x are small floating numbers, for example
+* Above case is not working well if x are small numbers, for example
 between 0, 1 (common case in PET images). We use xmin/xmax (e.g. 0..4095) than
 center/window (2048, 4096).
 

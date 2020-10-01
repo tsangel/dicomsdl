@@ -62,6 +62,7 @@ def __dataset__pixelData__(self, index=0):
 
   return outarr
 DataSet.pixelData = __dataset__pixelData__
+DataSet.storedValues = __dataset__pixelData__
 
 
 def __dataset__to_pil_image(self, index=0):
@@ -90,7 +91,7 @@ def __dataset__to_pil_image(self, index=0):
   intercept = check(info['RescaleIntercept'])
   intercept = intercept if intercept is not None else 0.0
   slope = check(info['RescaleSlope'])
-  slope = slope if slope is not None else 0.0
+  slope = slope if slope is not None else 1.0
   c = check(info['WindowCenter'])
   w = check(info['WindowWidth'])
 
