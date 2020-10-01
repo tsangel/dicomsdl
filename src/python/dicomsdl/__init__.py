@@ -10,6 +10,7 @@ from . import util
 
 __version__ = version
 
+
 def __dataset__getitem__(self, tagstr):
   de = self.getDataElement(tagstr)
   vr = de.vr()
@@ -23,6 +24,7 @@ def __dataset__getitem__(self, tagstr):
     return de.value()
 DataSet.__getitem__ = __dataset__getitem__
 
+
 def __dataset__getattr__(self, key):
       tag = TAG.from_keyword(key)
       if tag == 0xffffffff:
@@ -30,6 +32,7 @@ def __dataset__getattr__(self, key):
       else:
           return __dataset__getitem__(self, key)
 DataSet.__getattr__ = __dataset__getattr__
+
 
 def __dataset____dir__(self):
     """Return attributes of this DataSet with keywords of all DataElements.
@@ -45,7 +48,31 @@ DataSet.____dir__ = DataSet.__dir__ if IS_PY3 else lambda _: dir(DataSet)
 DataSet.__dir__ = __dataset____dir__
 
 
-def __dataset__pixelData__(self, index=0):
+def __dataset__pixelData__(self, index=0, storedvalue=False):
+  """Returns pixel values in this DataSet.
+
+  Args:
+    index (int): pixelData return index'th image if dataset holds multiframe
+                 data.
+    storedvalue (bool): True for get stored values; pixel values before LUT
+                        transformation using RescaleSlope and RescaleIntercept.
+
+  Returns:
+    Numpy array containing pixel values of `index`'th image if dataset holds
+    multiframe data. If `storedvalue` is False, RescaleSlope and
+    RescaleIntercept are applied to pixel values.
+    ( pixel values = stored values * RescsaleSlope + RescaleIntercept )
+
+  Example:
+    >>> dset=dicom.open_file('some_CT_image_file')
+    >>> dset.RescaleIntercept
+    -1024.0
+    >>> dset.pixelData(storedvalue=True).min()  # before LUT transformation
+    -2000
+    >>> dset.pixelData().min()  # after LUT transformation
+    -3024.0
+
+  """
   # https://stackoverflow.com/questions/44659924/returning-numpy-arrays-via-pybind11
   info = self.getPixelDataInfo()
   
@@ -60,12 +87,32 @@ def __dataset__pixelData__(self, index=0):
   outarr = np.empty(shape, dtype=dtype)
   self.copyFrameData(index, outarr)
 
+  check = lambda x: x[index] if isinstance(x, list) else x
+
+  if storedvalue is False:
+    intercept = check(info['RescaleIntercept'])
+    intercept = intercept if intercept is not None else 0.0
+    slope = check(info['RescaleSlope'])
+    slope = slope if slope is not None else 1.0
+    outarr = np.float32(outarr)
+    outarr *= slope
+    outarr += intercept
+
   return outarr
 DataSet.pixelData = __dataset__pixelData__
-DataSet.storedValues = __dataset__pixelData__
 
 
 def __dataset__to_pil_image(self, index=0):
+  """Returns a pillow image.
+
+  Args:
+    index (int): pixelData return index'th image if dataset holds multiframe
+                 image data.
+
+  Example:
+    >>> dset.to_pil_image().show()  # pop up system's default image viewer
+
+  """
   from PIL import Image
   # https://stackoverflow.com/questions/44659924/returning-numpy-arrays-via-pybind11
   info = self.getPixelDataInfo()
