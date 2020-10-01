@@ -16,6 +16,9 @@ def get_dicomsdl_version():
     # verstr = '0.105.1'
     return verstr
 
+def get_long_description():
+    return open('README.md').read()
+
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
         Extension.__init__(self, name, sources=[])
@@ -70,7 +73,8 @@ setup(
     author='Kim, Tae-Sung',
     author_email='taesung.angel@gmail.com',
     description='A fast and light-weighted DICOM software development library',
-    long_description='',
+    long_description=get_long_description(),
+    long_description_content_type='text/markdown',
     packages=find_packages('src/python'),
     package_dir={"dicomsdl":"src/python/dicomsdl"},
     ext_modules=[CMakeExtension('dicomsdl.dicomsdl')],
