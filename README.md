@@ -1,5 +1,5 @@
 ## DICOMSDL
-![Build status](https://ci.appveyor.com/api/projects/status/github/tsangel/dicomsdl)
+[![Build status](https://ci.appveyor.com/api/projects/status/cbaefp3pyvie8ilp?svg=true)](https://ci.appveyor.com/project/tsangel/dicomsdl)
 
 A fast and light-weighted DICOM software development library.
 
