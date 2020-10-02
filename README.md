@@ -46,6 +46,8 @@ DICOMSDL was successfully compiled and ran on following environments
 
 # Some examples
 
+Please look ipynb files in tutorial folder for detailed explanations.
+
 ```python
 >>> import dicomsdl as dicom
 
