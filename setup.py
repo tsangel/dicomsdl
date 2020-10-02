@@ -67,6 +67,28 @@ class CMakeBuild(build_ext):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+
+
+classifiers = """
+Development Status :: 3 - Alpha
+Development Status :: 4 - Beta
+Intended Audience :: Developers
+Intended Audience :: Healthcare Industry
+Intended Audience :: Science/Research
+License :: OSI Approved :: MIT License
+Operating System :: MacOS :: MacOS X
+Operating System :: Microsoft :: Windows
+Operating System :: POSIX :: Linux
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3.5
+Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
+Programming Language :: Python :: 3.8
+Topic :: Scientific/Engineering
+Topic :: Scientific/Engineering :: Medical Science Apps.
+""".strip().splitlines()
+classifiers = [l.strip() for l in classifiers]
+
 setup(
     name='dicomsdl',
     version=get_dicomsdl_version(),
@@ -75,6 +97,7 @@ setup(
     description='A fast and light-weighted DICOM software development library',
     long_description=get_long_description(),
     long_description_content_type='text/markdown',
+    url='https://github.com/tsangel/dicomsdl',
     packages=find_packages('src/python'),
     package_dir={"dicomsdl":"src/python/dicomsdl"},
     ext_modules=[CMakeExtension('dicomsdl.dicomsdl')],
@@ -83,6 +106,8 @@ setup(
             "dicomdump=dicomsdl.dump:main",
             "dicomshow=dicomsdl.show:main",
         ]},
+    classifiers=classifiers,
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4',
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
 )
