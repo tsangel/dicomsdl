@@ -9,20 +9,19 @@ Digital Imaging and Communications in Medicine (DICOM) is a standard for managin
 
 DICOM Software Development Library (DICOM SDL) is a software developed libraries for easy and quick development of an application managing DICOM formatted files. DICOM SDL allows to make programs that read DICOM formatted files without in depth knowledge of DICOM.
 
-DICOM SDL is intended to process a huge bunch of DICOM formatted image in high speed. To achieve the processing speed,
-DICOM SDL use an extension written in C++.
+DICOM SDL is intended to process a huge bunch of DICOM formatted image in high speed. For example, processing 1M+ dicom files for deep learning, speed really matters. To achieve the processing speed, DICOM SDL use an extension written in C++. DICOM SDL works much faster than pure DICOM implementation(see tutorials/timeit_test.ipynb). If your job is simple such as image extraction or get study date, DICOM SDL may be what you want.
 
 DICOM SDL can
 
 * read DICOM formatted files.
-* read medical images in DICOM file, if file encodes in raw format, jpeg/jpeg2000/RLE/JPEG-LS format.
+* read medical images in DICOM file, if file encodes in raw/jpeg/jpeg2000/RLE/JPEG-LS format.
 
 DICOM SDL is especially optimized for reading lots of DICOM formatted files quickly, and would be very useful for scanning and processing huge numbers of DICOM files.
 
 DICOM SDL cannot
 
-* send/receive DICOM over network.
 * modify/write function (will be add.)
+* send/receive DICOM over network.
 
 ## Install
 
