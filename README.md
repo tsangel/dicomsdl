@@ -49,7 +49,7 @@ DICOMSDL was successfully compiled and ran on following environments
 ```python
 >>> import dicomsdl as dicom
 
->>> dset = dicom.open("somefile.dcm")
+>>> dset = dicom.open_file("somefile.dcm")
 
 >>> print (dset.Rows, dset.Columns)
 512 512
