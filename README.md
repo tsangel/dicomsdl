@@ -1,13 +1,15 @@
-# DICOMSDL
-DICOM Software Development Library
+## DICOMSDL
+![Build status](https://ci.appveyor.com/api/projects/status/github/tsangel/dicomsdl)
+A fast and light-weighted DICOM software development library.
 
-# Introduction
+## Introduction
 
 Digital Imaging and Communications in Medicine (DICOM) is a standard for managing informations in medical imaging developed by American College of Radiology (ACR) and National Electrical Manufacturers Association (NEMA). It defines a file format and a communication protocol over network.
 
-DICOM Software Development Library (DICOM SDL) is a software developed libraries for easy and quick development of an application managing DICOM formatted files. DICOM SDL is written in C++ and it allows to make programs that read, modify, write DICOM formatted files without in depth knowledge of DICOM.
+DICOM Software Development Library (DICOM SDL) is a software developed libraries for easy and quick development of an application managing DICOM formatted files. DICOM SDL allows to make programs that read DICOM formatted files without in depth knowledge of DICOM.
 
-DICOM SDL provides an extension module for python and you may build scripts with python.
+DICOM SDL is intended to process a huge bunch of DICOM formatted image in high speed. To achieve the processing speed,
+DICOM SDL use an extension written in C++.
 
 DICOM SDL can
 
@@ -21,7 +23,7 @@ DICOM SDL cannot
 * send/receive DICOM over network.
 * modify/write function (will be add.)
 
-# Install
+## Install
 
 To install on python,
 ```
