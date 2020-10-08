@@ -357,6 +357,22 @@ class DataElement {
 
   void* value_ptr();
 
+  // set value functions
+
+  void setValue(long value);
+  void setValue(long long value);
+  void setValue(std::vector<long> value);
+  void setValue(std::vector<long long> value);
+  void setValue(double value);
+  void setValue(std::vector<double> value);
+
+  void setValue(const wchar_t *value);
+  void setValue(std::wstring value);
+  void setValue(std::vector<std::wstring> value);
+  void setValue(const char *value);  // set string
+  void setValue(std::string value);
+  void setValue(const void *value, size_t length);  // set rawvalue
+
   // getter functions
   // ----------------------------------------------------------
 
@@ -390,6 +406,10 @@ class DataElement {
 
     inline void setOffset(size_t offset) { offset_ = offset; }
     inline void setLength(size_t length) { length_ = length; }
+
+   private:
+    void alloc_ptr_(size_t size);
+    void free_ptr_();
   };
 
 // DataSet =====================================================================

@@ -944,4 +944,149 @@ std::wstring DataElement::toString(const wchar_t *default_value) {
   return ws;
 }
 
+void DataElement::setValue(long value) {
+  uint8_t buf[32];
+
+  bool is_little_endian =
+      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+
+  switch (vr_) {
+    case VR::SS:
+      store_e<int16_t>(buf, (int16_t)value, is_little_endian);
+      length_ = 2;
+      break;
+    case VR::US:
+      store_e<uint16_t>(buf, (uint16_t)value, is_little_endian);
+      length_ = 2;
+      break;
+    case VR::SL:
+      store_e<int32_t>(buf, (int32_t)value, is_little_endian);
+      length_ = 4;
+      break;
+    case VR::UL:
+      store_e<uint32_t>(buf, (uint32_t)value, is_little_endian);
+      length_ = 4;
+      break;
+    case VR::AT: {
+      uint16_t hi = value >> 16;
+      uint16_t lo = value & 0xffff;
+      store_e<uint16_t>(buf, hi, is_little_endian);
+      store_e<uint16_t>(buf, lo, is_little_endian);
+    }
+      length_ = 4;
+      break;
+    case VR::SV:
+      store_e<int64_t>(buf, (int64_t)value, is_little_endian);
+      length_ = 8;
+      break;
+    case VR::UV:
+      store_e<uint64_t>(buf, (uint64_t)value, is_little_endian);
+      length_ = 8;
+      break;
+    case VR::IS:
+      length_ = snprintf((char *)buf, 31, "%ld", value);
+      if (length_ & 1) {
+        buf[length_] = '\0';
+        length_++;
+      }
+      break;
+    default:
+      LOGERROR_AND_THROW(
+          "DataElement::setValue(long) - "
+          "cannot set long value to the DataElement %s, VR %s.",
+          TAG::repr(tag_).c_str(), VR::repr(vr_));
+      break;
+  }
+  alloc_ptr_(length_);
+  memcpy(ptr_, buf, length_);
+}
+
+void DataElement::setValue(long long value) {
+  uint8_t buf[32];
+
+  bool is_little_endian =
+      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+
+  switch (vr_) {
+    case VR::SS:
+      store_e<int16_t>(buf, (int16_t)value, is_little_endian);
+      length_ = 2;
+      break;
+    case VR::US:
+      store_e<uint16_t>(buf, (uint16_t)value, is_little_endian);
+      length_ = 2;
+      break;
+    case VR::SL:
+      store_e<int32_t>(buf, (int32_t)value, is_little_endian);
+      length_ = 4;
+      break;
+    case VR::UL:
+      store_e<uint32_t>(buf, (uint32_t)value, is_little_endian);
+      length_ = 4;
+      break;
+    case VR::AT: {
+      uint16_t hi = value >> 16;
+      uint16_t lo = value & 0xffff;
+      store_e<uint16_t>(buf, hi, is_little_endian);
+      store_e<uint16_t>(buf, lo, is_little_endian);
+    }
+      length_ = 4;
+      break;
+    case VR::SV:
+      store_e<int64_t>(buf, (int64_t)value, is_little_endian);
+      length_ = 8;
+      break;
+    case VR::UV:
+      store_e<uint64_t>(buf, (uint64_t)value, is_little_endian);
+      length_ = 8;
+      break;
+    case VR::IS:
+      length_ = snprintf((char *)buf, 31, "%lld", value);
+      if (length_ & 1) {
+        buf[length_] = '\0';
+        length_++;
+      }
+      break;
+    default:
+      LOGERROR_AND_THROW(
+          "DataElement::setValue(long long) - "
+          "cannot set long long value to the DataElement %s, VR %s.",
+          TAG::repr(tag_).c_str(), VR::repr(vr_));
+      break;
+  }
+  alloc_ptr_(length_);
+  memcpy(ptr_, buf, length_);
+}
+
+void DataElement::setValue(std::vector<long> value) {}
+void DataElement::setValue(std::vector<long long> value) {}
+void DataElement::setValue(double value) {}
+void DataElement::setValue(std::vector<double> value) {}
+
+void DataElement::setValue(const wchar_t *value) {}
+void DataElement::setValue(std::wstring value) {}
+void DataElement::setValue(std::vector<std::wstring> value) {}
+void DataElement::setValue(const char *value) {}  // set string
+void DataElement::setValue(std::string value) {}
+void DataElement::setValue(const void *value, size_t length) {}  // set rawvalue
+
+void DataElement::alloc_ptr_(size_t size) {
+  if (ptr_)
+    ::free(ptr_);
+  ptr_ = ::malloc(size);
+  if (!ptr_) {
+    LOGERROR_AND_THROW(
+        "DataElement::alloc_(size_t) - "
+        "cannot allocate %d bytes for the DataElement %s, VR %s.",
+        size, TAG::repr(tag_).c_str(), VR::repr(vr_));
+  }
+}
+
+void DataElement::free_ptr_()
+{
+  if (ptr_)
+    ::free(ptr_);
+  ptr_ = nullptr;
+}
+
 }  // namespace dicom

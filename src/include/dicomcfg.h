@@ -155,7 +155,7 @@ inline T load_le(void *p) {
   return *(T *)(p);
 }
 template <typename T>
-inline T store_le(void *p, T v) {
+inline void store_le(void *p, T v) {
   *(T *)(p) = v;
 }
 
@@ -175,21 +175,21 @@ inline T load_be(void *p) {
   }
 }
 template <typename T>
-inline T store_be(void *p, T v) {
+inline void store_be(void *p, T v) {
   if (sizeof(T) == 2) {
     uint16_t t;
     *(T *)&t = v;
-    return *(T *)(p) = bswap16(t);
+    *(T *)(p) = bswap16(t);
   }
   if (sizeof(T) == 4) {
     uint32_t t;
     *(T *)&t = v;
-    return *(T *)(p) = bswap32(t);
+    *(T *)(p) = bswap32(t);
   }
   if (sizeof(T) == 8) {
     uint64_t t;
     *(T *)&t = v;
-    return *(T *)(p) = bswap64(t);
+    *(T *)(p) = bswap64(t);
   }
 }
 
@@ -199,7 +199,7 @@ inline T load_be(void *p) {
   return *(T *)(p);
 }
 template <typename T>
-inline T store_be(void *p, T v) {
+inline void store_be(void *p, T v) {
   *(T *)(p) = v;
 }
 
@@ -219,21 +219,21 @@ inline T load_le(void *p) {
   }
 }
 template <typename T>
-inline T store_le(void *p, T v) {
+inline void store_le(void *p, T v) {
   if (sizeof(T) == 2) {
     uint16_t t;
     *(T *)&t = v;
-    return *(T *)(p) = bswap16(t);
+    *(T *)(p) = bswap16(t);
   }
   if (sizeof(T) == 4) {
     uint32_t t;
     *(T *)&t = v;
-    return *(T *)(p) = bswap32(t);
+    *(T *)(p) = bswap32(t);
   }
   if (sizeof(T) == 8) {
     uint64_t t;
     *(T *)&t = v;
-    return *(T *)(p) = bswap64(t);
+    *(T *)(p) = bswap64(t);
   }
 }
 #error cannot determine machine endianness
@@ -244,8 +244,11 @@ inline T load_e(void *p, bool is_little_endian) {
   return (is_little_endian ? load_le<T>(p) : load_be<T>(p));
 }
 template <typename T>
-inline T store_e(void *p, T v, bool is_little_endian) {
-  return (is_little_endian ? store_le<T>(p, v) : store_be<T>(p, v));
+inline void store_e(void *p, T v, bool is_little_endian) {
+  if (is_little_endian)
+    store_le<T>(p, v);
+  else
+    store_be<T>(p, v);
 }
 
 /* pointer to value macro --------------------------------------------------- */

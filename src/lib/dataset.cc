@@ -676,7 +676,7 @@ std::unique_ptr<DataSet> open_memory(const uint8_t* data, size_t datasize,
   try {
     dset->attachToMemory(data, datasize, copy_data);
     dset->loadDicomFile(load_until);
-  } catch (DicomException& e) {
+  } catch (DicomException& ) {
     if (!keep_on_error) throw;
     // if keep_on_error is true, ignore exception and return partially decoded
     // DataSet.
@@ -776,7 +776,7 @@ std::wstring DataSet::dump(size_t max_length) {
       tag_t tag = it->first;
       DataElement* de = it->second.get();
 
-      swprintf(buf, 1023, L"%08x'\t%hs\t%d\t%d\t%#x", tag,
+      swprintf(buf, 1023, L"%08x'\t%hs\t%zu\t%d\t%#zx", tag,
                VR::repr(de->vr()), de->length(), de->vm(),
                de->offset());
       wss << buf;
@@ -813,13 +813,14 @@ std::wstring DataSet::dump(size_t max_length) {
           std::vector<size_t> frag_offsets =
               pixseq->frameFragmentOffsets(frame_index);
           size_t nfrags = frag_offsets.size();
-          swprintf(buf, 1023,
-                   L"\t\tFRAME #%d (%d BYTES) WITH %d FRAGMENTS {%#x - %#x}\n",
-                   frame_index + 1, pixseq->frameEncodedDataLength(frame_index),
-                   nfrags / 2, start, end);
+          swprintf(
+              buf, 1023,
+              L"\t\tFRAME #%zu (%zu BYTES) WITH %zu FRAGMENTS {%#zx - %#zx}\n",
+              frame_index + 1, pixseq->frameEncodedDataLength(frame_index),
+              nfrags / 2, start, end);
           wss << buf;
           for (size_t frag_index = 0; frag_index < nfrags / 2; frag_index++) {
-            swprintf(buf, 1023, L"\t\t\t\tFRAGMENT #%d {%#x - %#x}\n",
+            swprintf(buf, 1023, L"\t\t\t\tFRAGMENT #%zu {%#zx - %#zx}\n",
                      frag_index, frag_offsets[frag_index * 2],
                      frag_offsets[frag_index * 2 + 1]);
             wss << buf;

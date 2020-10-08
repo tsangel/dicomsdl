@@ -66,7 +66,7 @@ void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
           instream->tell());
     }
 
-    // Item Tag​ (FFFE,E000) or (FFFE,E0DD)
+    // Item Tag (FFFE,E000) or (FFFE,E0DD)
     tag = TAG::load_32le(buf);
     // Item Length (4 bytes)
     length = load_le<uint32_t>(buf + 4);
