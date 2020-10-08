@@ -159,6 +159,10 @@ inline void store_le(void *p, T v) {
   *(T *)(p) = v;
 }
 
+#pragma warning( push )
+#pragma warning( disable : 4739 )
+// turn off warning: reference to variable 't' exceeds its storage space
+
 template <typename T>
 inline T load_be(void *p) {
   if (sizeof(T) == 2) {
@@ -238,6 +242,8 @@ inline void store_le(void *p, T v) {
 }
 #error cannot determine machine endianness
 #endif
+
+#pragma warning( pop )
 
 template <typename T>
 inline T load_e(void *p, bool is_little_endian) {

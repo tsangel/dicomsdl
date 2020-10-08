@@ -359,19 +359,18 @@ class DataElement {
 
   // set value functions
 
-  void setValue(long value);
-  void setValue(long long value);
-  void setValue(std::vector<long> value);
-  void setValue(std::vector<long long> value);
-  void setValue(double value);
-  void setValue(std::vector<double> value);
+  void fromLong(long value);
+  void fromLongLong(long long value);
+  void fromLongVector(std::vector<long> value);
+  void fromLongLongVector(std::vector<long long> value);
+  void fromDouble(double value);
+  void fromDoubleVector(std::vector<double> value);
 
-  void setValue(const wchar_t *value);
-  void setValue(std::wstring value);
-  void setValue(std::vector<std::wstring> value);
-  void setValue(const char *value);  // set string
-  void setValue(std::string value);
-  void setValue(const void *value, size_t length);  // set rawvalue
+  void fromString(const wchar_t* value);
+  void fromString(std::wstring value);
+  void fromStringVector(std::vector<std::wstring> value);
+  void fromBytes(const char* value, size_t length = -1);  // set rawvalue
+  void fromBytes(std::string value);
 
   // getter functions
   // ----------------------------------------------------------
@@ -408,9 +407,12 @@ class DataElement {
     inline void setLength(size_t length) { length_ = length; }
 
    private:
+    // Allocate size bytes memory to `ptr_`, after call `free_ptr_`. `ptr_` is
+    // set to `nullptr` if size is zero. Caller should set `length_`.
     void alloc_ptr_(size_t size);
+    // Free memory if `ptr_` is not null. `ptr_` is set to `nullptr`.
     void free_ptr_();
-  };
+};
 
 // DataSet =====================================================================
 
