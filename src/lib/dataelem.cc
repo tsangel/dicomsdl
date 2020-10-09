@@ -14,6 +14,25 @@
 
 namespace dicom {
 
+static int double_to_string16(double value, char tmp[32]) {
+  // Maximum length of value if 16 bytes for DS (Decimal String).
+  // Returns length of the resultant string.
+  static const char *decimal_formats[] = {"%.15g", "%.14g", "%.13g", "%.12g",
+                                          "%.11g", "%.10g", "%.9g",  "%.8g",
+                                          "%.7g",  "%.6g",  "%.5g",  NULL};
+  // "%.9g" is sufficient actually...
+  const char **fmt = decimal_formats;
+  int len;
+
+  do {
+    len = snprintf(tmp, 32, *fmt, value);
+    if (len <= 16) break;
+    ++fmt;
+  } while (*fmt);
+
+  return len;
+}
+
 DataElement::DataElement(tag_t tag, vr_t vr, size_t length, size_t offset, DataSet* parent)
     : tag_(tag),
       vr_(vr),
@@ -47,7 +66,7 @@ DataElement::~DataElement() {
         delete pixseq_;
         break;
       default:
-        free(ptr_);
+        free_ptr_();
         break;
     }
   }
@@ -990,6 +1009,12 @@ void DataElement::fromLong(long value) {
         length_++;
       }
       break;
+    case VR::FL:
+    case VR::FD:
+    case VR::DS:
+      fromDouble((double)value);
+      return;
+      break;      
     default:
       LOGERROR_AND_THROW(
           "DataElement::setValue(long) - "
@@ -1047,6 +1072,12 @@ void DataElement::fromLongLong(long long value) {
         length_++;
       }
       break;
+    case VR::FL:
+    case VR::FD:
+    case VR::DS:
+      fromDouble((double)value);
+      return;
+      break;
     default:
       LOGERROR_AND_THROW(
           "DataElement::setValue(long long) - "
@@ -1077,7 +1108,8 @@ void DataElement::fromDouble(double value) {
       length_ = 8;
       break;
     case VR::DS:
-      length_ = snprintf((char *)tmp, 31, "%.10g", value);
+      // Maximum length of value if 16 bytes for DS (Decimal String).
+      length_ = double_to_string16(value, (char *)tmp);
       if (length_ & 1) {
         tmp[length_] = ' ';  // trailing space to make length even.
         length_++;
