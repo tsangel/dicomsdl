@@ -451,6 +451,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("removeDataElement", &DataSet::removeDataElement)
       .def("attachToFile", &DataSet::attachToFile)
       .def("attachToMemory", &DataSet::attachToMemory)
+      .def("getSpecificCharset", &DataSet::getSpecificCharset, "index"_a = 0)
       .def("dump", &DataSet::dump, "max_length"_a = 120)
       .def(
           "__iter__",

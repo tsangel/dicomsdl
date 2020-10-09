@@ -28,7 +28,7 @@ DataSet::DataSet()
       transfer_syntax_(UID::EXPLICIT_VR_LITTLE_ENDIAN),
       is_little_endian_(true),
       is_vr_explicit_(true),
-      specific_charset_(CHARSET::UNKNOWN) {
+      specific_charset0_(CHARSET::UNKNOWN) {
   // 0xffffffff for last_tag_loaded_ will prevent getDataElement try to load()
   // from an empty DataSet.
   last_tag_loaded_ = 0xffffffff;
@@ -45,7 +45,7 @@ DataSet::DataSet(DataSet* parent)
                       UID::IMPLICIT_VR_LITTLE_ENDIAN) {
   last_tag_loaded_ = 0x0;
   UINT64(buf8_) = 0;
-  specific_charset_ = CHARSET::UNKNOWN; // use root_dataset's charset
+  specific_charset0_ = CHARSET::UNKNOWN; // use root_dataset's charset
   LOG_DEBUG("++ @%p\tDataSet::DataSet(DataSet*) parent @p", this, parent);
 }
 
@@ -211,23 +211,43 @@ DataElement* DataSet::getDataElement(const char *tagstr) {
 
 void DataSet::removeDataElement(tag_t tag) { edict_.erase(tag); }
 
-charset_t DataSet::getSpecificCharset() {
+charset_t DataSet::getSpecificCharset(int index) {
   if (this != root_dataset_)
     return root_dataset_->getSpecificCharset();
 
-  if (specific_charset_ == CHARSET::UNKNOWN) {
+  if (specific_charset0_ == CHARSET::UNKNOWN) {
     DataElement* de = root_dataset_->getDataElement(0x00080005);
-    specific_charset_ =
-        CHARSET::from_string((char*)(de->value_ptr()), de->length());
-    if (specific_charset_ == CHARSET::UNKNOWN) {
+
+    {
+      char* valueptr = (char*)de->value_ptr();
+      size_t valuesize = de->length();
+
+      char* firstdelim = strchr(valueptr, '\\');
+      if (firstdelim == NULL) {
+        // no delim, only one character set
+        specific_charset1_ = specific_charset0_ =
+            CHARSET::from_string(valueptr, valuesize);
+      } else {
+        const char* lastdelim = strrchr(valueptr, '\\');
+        specific_charset0_ =
+            CHARSET::from_string(valueptr, firstdelim - valueptr);
+        specific_charset1_ = CHARSET::from_string(
+            lastdelim + 1, valuesize - (lastdelim + 1 - valueptr));
+      }
+    }
+    if (specific_charset0_ == CHARSET::UNKNOWN ||
+        specific_charset1_ == CHARSET::UNKNOWN) {
       LOG_WARN("   DataSet::specific_charset - unknown CHARSET \"%s\"",
                std::string((char*)de->value_ptr(), de->length()).c_str());
-      // 
-      specific_charset_ = CHARSET::DEFAULT;
+      specific_charset0_ = CHARSET::DEFAULT;
+      specific_charset1_ = CHARSET::DEFAULT;
     }
   }
-  
-  return specific_charset_;
+
+  if (index == 0)
+    return specific_charset0_;
+  else
+    return specific_charset1_;
 }
 
 void DataSet::attachToMemory(const uint8_t* data, size_t datasize,

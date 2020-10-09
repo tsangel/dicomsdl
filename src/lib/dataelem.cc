@@ -802,7 +802,6 @@ std::vector<std::wstring> DataElement::toStringVector() {
   }
 
   charset_t charset;
-  DataSet *dataset = parent_;
 
   switch (vr_) {
     case VR::AE:
@@ -1119,6 +1118,21 @@ void DataElement::_fromNumberVectorToBytes(const std::vector<AVT> &value)
   }
 }
 
+template <typename AVT>
+void DataElement::_fromNumberVectorToAttrTags(const std::vector<AVT> &value) {
+  bool is_little_endian =
+      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+
+  alloc_ptr_(value.size() * sizeof(tag_t));
+  uint16_t *p = (uint16_t *)ptr_;
+  for (auto v : value) {
+    long _v = (long)v;
+    store_e<uint16_t>(p, _v >> 16, is_little_endian);
+    store_e<uint16_t>(p + 1, _v & 0xffff, is_little_endian);
+    p += 2;
+  }
+}
+
 void DataElement::fromDouble(const double value) {
   uint8_t tmp[32];
 
@@ -1183,6 +1197,9 @@ void DataElement::_fromNumberVectorToString(const std::vector<AVT> &value) {
 // AVT; argument value type - long, long long or double
 template <typename AVT>
 bool DataElement::_fromNumberVector(const std::vector<AVT> &value) {
+  if (value.size() == 0)
+    return true;
+
   switch (vr_) {
     case VR::SS:
       _fromNumberVectorToBytes<AVT, int16_t>(value);
@@ -1204,6 +1221,9 @@ bool DataElement::_fromNumberVector(const std::vector<AVT> &value) {
     case VR::UV:
     case VR::OV:
       _fromNumberVectorToBytes<AVT, uint64_t>(value);
+      break;
+    case VR::AT:
+      _fromNumberVectorToAttrTags<AVT>(value);
       break;
     case VR::FL:
       _fromNumberVectorToBytes<AVT, float32_t>(value);
@@ -1254,11 +1274,100 @@ void DataElement::fromDoubleVector(const std::vector<double> &value) {
         TAG::repr(tag_).c_str(), VR::repr(vr_));
 }
 
-void DataElement::fromString(const wchar_t *value) {}
-void DataElement::fromString(const std::wstring &value) {}
-void DataElement::fromStringVector(const std::vector<std::wstring> &value) {}
+void DataElement::fromString(const wchar_t *value, size_t length) {
+  if (value == nullptr || *value == L'\0')
+    return;
+
+  if (length == -1) {
+    length = wcslen(value);
+  }
+
+  charset_t charset;
+  DataSet *dataset = parent_;
+  std::string bytes;
+
+  switch (vr_) {
+    case VR::AE:
+    case VR::AS:
+    case VR::CS:
+    case VR::DA:
+    case VR::DS:
+    case VR::DT:
+    case VR::IS:
+    case VR::TM:
+    case VR::UI:
+    case VR::UR:
+      charset = CHARSET::DEFAULT;
+      break;
+
+    case VR::LO:
+    case VR::LT:
+    case VR::PN:
+    case VR::SH:
+    case VR::ST:
+    case VR::UC:
+    case VR::UT:
+      // get character set for encoding
+      charset = parent_->getSpecificCharset(1);
+      break;
+
+    default:
+      LOGERROR_AND_THROW(
+          "DataElement::fromString - cannot set unicode value to the "
+          "DataElement %s, VR %s",
+          TAG::repr(tag_).c_str(), VR::repr(vr_));
+      break;
+  }
+  bytes = convert_from_unicode(value, length, charset);  // may throw error
+  fromBytes(bytes);
+}
+
+void DataElement::fromString(const std::wstring &value) {
+  fromString(value.c_str(), value.size());
+}
+
+void DataElement::fromStringVector(const std::vector<std::wstring> &value) {
+  if (value.size() == 0) return;
+  switch (vr_) {
+    case VR::AE:
+    case VR::AS:
+    case VR::CS:
+    case VR::DA:
+    case VR::DS:
+    case VR::DT:
+    case VR::IS:
+    case VR::LO:
+    case VR::PN:
+    case VR::SH:
+    case VR::TM:
+    case VR::UC:
+    case VR::UI:
+      break;
+    default:
+      LOGERROR_AND_THROW(
+          "DataElement::fromStringVector - "
+          "DataElement %s, VR %s does not take multiple string values.",
+          TAG::repr(tag_).c_str(), VR::repr(vr_));
+      break;
+  }
+  std::wstring valstr;
+  size_t totalsize = 0;
+  for (auto v: value) {
+    totalsize += value.size() + 1;
+  }
+  valstr.reserve(totalsize);
+  for (auto v: value) {
+    valstr.append(v);
+    valstr.push_back(L'\\');
+  }
+  valstr.pop_back();
+  fromString(valstr);
+}
 
 void  DataElement::fromBytes(const char *value, size_t length) {
+  if (length == 0)
+    return;
+
   if (length == -1) {
     length = strlen(value);
   }

@@ -366,7 +366,7 @@ class DataElement {
   void fromDouble(const double value);
   void fromDoubleVector(const std::vector<double>& value);
 
-  void fromString(const wchar_t* value);
+  void fromString(const wchar_t* value, size_t length = -1);
   void fromString(const std::wstring& value);
   void fromStringVector(const std::vector<std::wstring>& value);
   void fromBytes(const char* value, size_t length = -1);  // set rawvalue
@@ -418,6 +418,8 @@ class DataElement {
     bool _fromNumberVector(const std::vector<AVT> &value);
     template <typename AVT, typename SVT>
     void _fromNumberVectorToBytes(const std::vector<AVT>& value);
+    template <typename AVT>
+    void _fromNumberVectorToAttrTags(const std::vector<AVT>& value);
     template <typename AVT, typename SVT>
     void _fromNumberVectorToString(const std::vector<AVT>& value);
 };
@@ -436,7 +438,11 @@ class DataSet {
   tsuid_t transfer_syntax_;
   bool is_little_endian_;
   bool is_vr_explicit_;
-  charset_t specific_charset_;
+
+  // first character set for convert_to_unicode argument
+  charset_t specific_charset0_;
+  // last character set for convert_from_unicode argument
+  charset_t specific_charset1_;
 
   size_t offset_in_stream_;  // location in the file (for DICOMDIR)
 
@@ -473,7 +479,7 @@ class DataSet {
   inline bool is_little_endian() const { return is_little_endian_; }
   inline bool is_vr_explicit() const { return is_vr_explicit_; }
   inline tsuid_t transfer_syntax() const { return transfer_syntax_; }
-  charset_t getSpecificCharset();
+  charset_t getSpecificCharset(int index=0);
 
   // get/set offset in the file (for DICOMDIR)
   // PS3.3 Table F.3-3. Directory Information Module Attributes
