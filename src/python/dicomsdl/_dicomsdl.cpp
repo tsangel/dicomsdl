@@ -375,8 +375,6 @@ PYBIND11_MODULE(_dicomsdl, m) {
 
   // class DataElement ---------------------------------------------------------
 
-
-
   py::class_<DataElement>(m, "DataElement")
       .def("length", &DataElement::length)
       .def("vr", &DataElement::vr)
@@ -388,10 +386,14 @@ PYBIND11_MODULE(_dicomsdl, m) {
            py::return_value_policy::reference_internal)
       .def("pointer", &DataElement::pointer,
            py::return_value_policy::reference_internal)
-      .def("toBytes", [](DataElement &de, const char* default_value) {
-        std::string s = de.toBytes(default_value);
-        return py::bytes(s);
-      }, "default_value"_a = "")
+      .def("repr", &DataElement::repr, "max_length"_a = 80)
+      .def(
+          "toBytes",
+          [](DataElement &de, const char *default_value) {
+            std::string s = de.toBytes(default_value);
+            return py::bytes(s);
+          },
+          "default_value"_a = "")
       .def("toLong", &DataElement::toLong, "default_value"_a = 0)
       .def("toLongLong", &DataElement::toLongLong, "default_value"_a = 0)
       .def("toLongVector", &DataElement::toLongVector)
@@ -400,7 +402,18 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("toDoubleVector", &DataElement::toDoubleVector)
       .def("toString", &DataElement::toString, "default_value"_a = L"")
       .def("toStringVector", &DataElement::toStringVector)
-      .def("value", &dataelement_value);
+      .def("value", &dataelement_value)
+      .def("fromLong", &DataElement::fromLong)
+      .def("fromLongLong", &DataElement::fromLongLong)
+      .def("fromLongVector", &DataElement::fromLongVector)
+      .def("fromLongLongVector", &DataElement::fromLongLongVector)
+      .def("fromDouble", &DataElement::fromDouble)
+      .def("fromDoubleVector", &DataElement::fromDoubleVector)
+      .def("fromString", (void (DataElement::*)(const std::wstring &)) &
+                             DataElement::fromString)
+      .def("fromStringVector", &DataElement::fromStringVector)
+      .def("fromBytes", (void (DataElement::*)(const std::string &)) &
+                            DataElement::fromBytes);
 
   // class DataSet -------------------------------------------------------------
 
@@ -554,8 +567,6 @@ PYBIND11_MODULE(_dicomsdl, m) {
            })
       .def("getPixelDataInfo",
            [](DataSet &ds) {
-             DataElement *de;
-
              py::dict info;
              // Rows
              info["Rows"] = ds.getDataElement(0x00280010)->toLong();

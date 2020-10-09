@@ -8,27 +8,43 @@
 
 #include <iostream>
 #include <sstream>
+#include <type_traits>
 
 #include "dicom.h"
 #include "instream.h"
 
 namespace dicom {
 
-static int double_to_string16(double value, char tmp[32]) {
-  // Maximum length of value if 16 bytes for DS (Decimal String).
-  // Returns length of the resultant string.
-  static const char *decimal_formats[] = {"%.15g", "%.14g", "%.13g", "%.12g",
-                                          "%.11g", "%.10g", "%.9g",  "%.8g",
-                                          "%.7g",  "%.6g",  "%.5g",  NULL};
-  // "%.9g" is sufficient actually...
-  const char **fmt = decimal_formats;
+template <typename AVT, typename SVT>
+static int _value_to_string(AVT value, char tmp[32]) {
+  // convert 'AVT' type value' into string in 'SVT' type format.
+  // AVT - argument value type - long, long long, or double
+  // SVT - store value type, either long long for string in integer format
+  // (VR::IS, e.g. "1234") or in decimal format (VR::DS, e.g. "12.34"). Returns
+  // length of the resultant string.
   int len;
 
-  do {
-    len = snprintf(tmp, 32, *fmt, value);
-    if (len <= 16) break;
-    ++fmt;
-  } while (*fmt);
+  if (std::is_integral<SVT>::value) {  // for VR::IS
+    if (std::is_integral<AVT>::value) {
+      len = snprintf((char *)tmp, 31, "%lld", (long long)value);
+    } else {  // type value == double
+      long long value_ = (long long)value;
+      len = snprintf((char *)tmp, 31, "%lld", (long long)value_);
+    }
+  } else {  // for VR::DS
+    // Maximum length of value if 16 bytes for DS (Decimal String).
+    static const char *decimal_formats[] = {"%.15g", "%.14g", "%.13g", "%.12g",
+                                            "%.11g", "%.10g", "%.9g",  "%.8g",
+                                            "%.7g",  "%.6g",  "%.5g",  NULL};
+    // "%.9g" is sufficient actually...
+    const char **fmt = decimal_formats;
+    do {
+      // value with any type will be cast into double
+      len = snprintf(tmp, 32, *fmt, (double) value);
+      if (len <= 16) break;
+      ++fmt;
+    } while (*fmt);
+  }
 
   return len;
 }
@@ -66,7 +82,7 @@ DataElement::~DataElement() {
         delete pixseq_;
         break;
       default:
-        free_ptr_();
+        _free_ptr();
         break;
     }
   }
@@ -963,7 +979,7 @@ std::wstring DataElement::toString(const wchar_t *default_value) {
   return ws;
 }
 
-void DataElement::fromLong(long value) {
+void DataElement::fromLong(const long value) {
   uint8_t tmp[32];
 
   bool is_little_endian =
@@ -1026,7 +1042,7 @@ void DataElement::fromLong(long value) {
   memcpy(ptr_, tmp, length_);
 }
 
-void DataElement::fromLongLong(long long value) {
+void DataElement::fromLongLong(const long long value) {
   uint8_t tmp[32];
 
   bool is_little_endian =
@@ -1089,10 +1105,21 @@ void DataElement::fromLongLong(long long value) {
   memcpy(ptr_, tmp, length_);
 }
 
-void DataElement::fromLongVector(std::vector<long> value) {}
-void DataElement::fromLongLongVector(std::vector<long long> value) {}
+template<typename AVT, typename SVT>
+void DataElement::_fromNumberVectorToBytes(const std::vector<AVT> &value)
+{
+  bool is_little_endian =
+      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+  
+  alloc_ptr_(value.size() *sizeof(SVT));
+  SVT *p = (SVT *)ptr_;
+  for (auto v: value) {
+    store_e<SVT>(p, (SVT)v, is_little_endian);
+    ++p;
+  }
+}
 
-void DataElement::fromDouble(double value) {
+void DataElement::fromDouble(const double value) {
   uint8_t tmp[32];
 
   bool is_little_endian =
@@ -1108,8 +1135,7 @@ void DataElement::fromDouble(double value) {
       length_ = 8;
       break;
     case VR::DS:
-      // Maximum length of value if 16 bytes for DS (Decimal String).
-      length_ = double_to_string16(value, (char *)tmp);
+      length_ = _value_to_string<double, double>(value, (char *)tmp);
       if (length_ & 1) {
         tmp[length_] = ' ';  // trailing space to make length even.
         length_++;
@@ -1136,36 +1162,172 @@ void DataElement::fromDouble(double value) {
   memcpy(ptr_, tmp, length_);
 }
 
-void DataElement::fromDoubleVector(std::vector<double> value) {}
+// AVT; argument type - long, long long or double
+// SVT; stored value type - uint16_t, int16_t, uint32_t, ....
+// SVT; stored value type - double for DS, long for IS
+template <typename AVT, typename SVT>
+void DataElement::_fromNumberVectorToString(const std::vector<AVT> &value) {
+  char tmp[32];
+  std::string tmpstr;
+  int len;
+  tmpstr.reserve(value.size() * 8);
+  for (auto v : value) {
+    len = _value_to_string<AVT, SVT>(v, tmp);
+    tmpstr.append(tmp, len);
+    tmpstr.push_back('\\');
+  }
+  tmpstr.pop_back();
+  fromBytes(tmpstr);
+}
+
+// AVT; argument value type - long, long long or double
+template <typename AVT>
+bool DataElement::_fromNumberVector(const std::vector<AVT> &value) {
+  switch (vr_) {
+    case VR::SS:
+      _fromNumberVectorToBytes<AVT, int16_t>(value);
+      break;
+    case VR::SL:
+      _fromNumberVectorToBytes<AVT, int32_t>(value);
+      break;
+    case VR::SV:
+      _fromNumberVectorToBytes<AVT, int64_t>(value);
+      break;
+    case VR::US:
+    case VR::OW:    
+      _fromNumberVectorToBytes<AVT, uint16_t>(value);
+      break;
+    case VR::UL:
+    case VR::OL:
+      _fromNumberVectorToBytes<AVT, uint32_t>(value);
+      break;
+    case VR::UV:
+    case VR::OV:
+      _fromNumberVectorToBytes<AVT, uint64_t>(value);
+      break;
+    case VR::FL:
+      _fromNumberVectorToBytes<AVT, float32_t>(value);
+      break;
+    case VR::FD:
+      _fromNumberVectorToBytes<AVT, float64_t>(value);
+      break;
+    case VR::IS:
+      _fromNumberVectorToString<AVT, long long>(value);
+      break;
+    case VR::DS:
+      _fromNumberVectorToString<AVT, double>(value);
+      break;
+    default:
+      return false;
+      break;
+  }
+  return true;
+}
+
+void DataElement::fromLongVector(const std::vector<long> &value) {
+  if (_fromNumberVector<long>(value))
+    return;
+  else
+    LOGERROR_AND_THROW(
+        "DataElement::fromLongVector - "
+        "cannot set long vector value to the DataElement %s, VR %s.",
+        TAG::repr(tag_).c_str(), VR::repr(vr_));
+}
+
+void DataElement::fromLongLongVector(const std::vector<long long> &value) {
+  if (_fromNumberVector<long long>(value))
+    return;
+  else
+    LOGERROR_AND_THROW(
+        "DataElement::fromLongLongVector - "
+        "cannot set long long vector value to the DataElement %s, VR %s.",
+        TAG::repr(tag_).c_str(), VR::repr(vr_));
+}
+
+void DataElement::fromDoubleVector(const std::vector<double> &value) {
+  if (_fromNumberVector<double>(value))
+    return;
+  else
+    LOGERROR_AND_THROW(
+        "DataElement::fromDoubleVector - "
+        "cannot set double vector value to the DataElement %s, VR %s.",
+        TAG::repr(tag_).c_str(), VR::repr(vr_));
+}
 
 void DataElement::fromString(const wchar_t *value) {}
-void DataElement::fromString(std::wstring value) {}
-void DataElement::fromStringVector(std::vector<std::wstring> value) {}
+void DataElement::fromString(const std::wstring &value) {}
+void DataElement::fromStringVector(const std::vector<std::wstring> &value) {}
 
 void  DataElement::fromBytes(const char *value, size_t length) {
   if (length == -1) {
     length = strlen(value);
   }
+
+  alloc_ptr_((length & 1) ? length + 1 : length);
+  memcpy(ptr_, value, length);
+
+  if (length & 1) {
+    switch (vr_) {
+      // add a trailing space
+      case VR::AE:
+      case VR::AS:
+      case VR::CS:
+      case VR::DS:
+      case VR::DT:
+      case VR::IS:
+      case VR::LO:
+      case VR::PN:
+      case VR::SH:
+      case VR::DA:
+      case VR::TM:
+      case VR::UC:
+      case VR::UR:
+      case VR::LT:
+      case VR::ST:
+      case VR::UT:
+        ((char *)ptr_)[length] = ' ';
+
+        break;
+        // a single trailing NULL (00H) character
+      case VR::UI:
+      default:
+        ((char *)ptr_)[length] = '\0';
+        break;
+    }
+  }
 }
-void DataElement::fromBytes(std::string value) {}
+
+void DataElement::fromBytes(const std::string &value) {
+  fromBytes(value.c_str(), value.length());
+}
 
 void DataElement::alloc_ptr_(size_t size) {
-  free_ptr_();
+  if (size & 1) {
+    LOGERROR_AND_THROW(
+        "DataElement::alloc_(size_t) - "
+        "Size = %zd bytes is not even number for the DataElement %s, VR %s.",
+        size, TAG::repr(tag_).c_str(), VR::repr(vr_));
+  }
+
+  _free_ptr();
   if (size == 0) return;
   ptr_ = ::malloc(size);
   if (!ptr_) {
     LOGERROR_AND_THROW(
         "DataElement::alloc_(size_t) - "
-        "cannot allocate %d bytes for the DataElement %s, VR %s.",
+        "cannot allocate %zd bytes for the DataElement %s, VR %s.",
         size, TAG::repr(tag_).c_str(), VR::repr(vr_));
   }
+  length_ = size;
 }
 
-void DataElement::free_ptr_()
+void DataElement::_free_ptr()
 {
-  if (ptr_)
+  if (ptr_) {
     ::free(ptr_);
-  ptr_ = nullptr;
+    ptr_ = nullptr;
+    length_ = 0;
+  }
 }
 
 }  // namespace dicom

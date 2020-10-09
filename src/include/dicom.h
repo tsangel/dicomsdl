@@ -359,18 +359,18 @@ class DataElement {
 
   // set value functions
 
-  void fromLong(long value);
-  void fromLongLong(long long value);
-  void fromLongVector(std::vector<long> value);
-  void fromLongLongVector(std::vector<long long> value);
-  void fromDouble(double value);
-  void fromDoubleVector(std::vector<double> value);
+  void fromLong(const long value);
+  void fromLongLong(const long long value);
+  void fromLongVector(const std::vector<long>& value);
+  void fromLongLongVector(const std::vector<long long>& value);
+  void fromDouble(const double value);
+  void fromDoubleVector(const std::vector<double>& value);
 
   void fromString(const wchar_t* value);
-  void fromString(std::wstring value);
-  void fromStringVector(std::vector<std::wstring> value);
+  void fromString(const std::wstring& value);
+  void fromStringVector(const std::vector<std::wstring>& value);
   void fromBytes(const char* value, size_t length = -1);  // set rawvalue
-  void fromBytes(std::string value);
+  void fromBytes(const std::string& value);
 
   // getter functions
   // ----------------------------------------------------------
@@ -407,11 +407,19 @@ class DataElement {
     inline void setLength(size_t length) { length_ = length; }
 
    private:
-    // Allocate size bytes memory to `ptr_`, after call `free_ptr_`. `ptr_` is
-    // set to `nullptr` if size is zero. Caller should set `length_`.
+    // Allocate size bytes memory to `ptr_`. `_free_ptr()` set `ptr_` to
+    // `nullptr` if size is zero. `length_` is set to size. `size` should be
+    // even.
     void alloc_ptr_(size_t size);
     // Free memory if `ptr_` is not null. `ptr_` is set to `nullptr`.
-    void free_ptr_();
+    void _free_ptr();
+
+    template <typename AVT>
+    bool _fromNumberVector(const std::vector<AVT> &value);
+    template <typename AVT, typename SVT>
+    void _fromNumberVectorToBytes(const std::vector<AVT>& value);
+    template <typename AVT, typename SVT>
+    void _fromNumberVectorToString(const std::vector<AVT>& value);
 };
 
 // DataSet =====================================================================
