@@ -486,7 +486,9 @@ class DataSet {
   // Config::set("WRITE_PREAMBLE", "TRUE")
   // Config::set("WRITE_PREAMBLE", "FALSE")
   // - Write preamble 132 bytes (128 '\0's and "DICM") if "TRUE".
-  std::string saveToMemory(bool preamble=true);
+  void saveToStream(std::ostream& oss);
+  void saveToFile(const char *filename);
+  std::string saveToMemory();
 
   inline InStream* instream() { return is_.get(); }
 

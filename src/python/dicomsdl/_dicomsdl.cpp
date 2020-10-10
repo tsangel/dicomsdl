@@ -470,13 +470,10 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("getSpecificCharset", &DataSet::getSpecificCharset, "index"_a = 0)
       .def("setSpecificCharset", &DataSet::setSpecificCharset)
       .def("dump", &DataSet::dump, "max_length"_a = 120)
-      .def(
-          "saveToMemory",
-          [](DataSet &ds, bool preamble) {
-            std::string s = ds.saveToMemory(preamble);
-            return py::bytes(s);
-          },
-          "preamble"_a = true)
+      .def("saveToFile", &DataSet::saveToFile)
+      .def("save", &DataSet::saveToFile)
+      .def("saveToMemory",
+           [](DataSet &ds) { return py::bytes(ds.saveToMemory()); })
       .def(
           "__iter__",
           [](DataSet &ds) {

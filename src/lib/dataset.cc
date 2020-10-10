@@ -7,19 +7,20 @@
  */
 
 #include <stdio.h>
-
-#include <memory>
-#include <stdexcept>
-#include <vector>
-#include <iostream>
 #include <string.h>
 #include <wchar.h>
-#include <string>
-#include <sstream>
 
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "deflate.h"
 #include "dicom.h"
 #include "instream.h"
-#include "deflate.h"
 
 namespace dicom {
 
@@ -799,30 +800,30 @@ void DataSet::load(tag_t load_until, InStream *instream) {
   if (instream->is_eof()) last_tag_loaded_ = 0xFFFFFFFF;
 }
 
-std::string DataSet::saveToMemory(bool preamble) {
-  std::ostringstream oss(std::ostringstream::binary);
-  std::string chunk;
+void DataSet::saveToFile(const char* filename) {
+  std::ofstream ofs;
+  ofs.open (filename, std::ofstream::out | std::ofstream::binary);
+  saveToStream(ofs);
+  ofs.close();
+}
 
+std::string DataSet::saveToMemory() {
+  std::ostringstream oss(std::ostringstream::binary);
+  saveToStream(oss);
+  return oss.str();
+}
+
+void DataSet::saveToStream(std::ostream& oss) {
+  // Load configuration
   bool sq_explicit_length =
       Config::get("SAVE_SQ_EXPLICIT_LENGTH", "TRUE")[0] == 'T';
   bool writing_metainfo = Config::get("WRITE_METAINFO", "TRUE")[0] == 'T';
   bool writing_preamble = Config::get("WRITE_PREAMBLE", "TRUE")[0] == 'T';
 
-  // SAVE_SQ_EXPLICIT_LENGTH = true
-  // Table 7.5-1. Example of a Data Element with Implicit VR Defined as a
-  // Sequence of Items (VR = SQ) with Three Items of Explicit Length.
-  //
-  // SAVE_SQ_EXPLICIT_LENGTH = false
-  // Table 7.5-3. Example of a Data Element with Implicit VR Defined as a
-  // Sequence of Items (VR = SQ) of Undefined Length, Containing Two Items Where
-  // One Item is of Explicit Length and the Other Item is of Undefined Length
-  // sq_item_length_explicit.
-  // Length = 0xffffffff. Ends with Seq. Delim.​ Tag (FFFE,​ E0DD).
-  // Length of each item = 0xffffffff, ends with Item​ Delim.​ Tag​ (FFFE,​ E00D)
-
   bool little_endian = true;
   bool vr_explicit = true;
 
+  // for calculating group length, item value length, etc ...
   std::vector<size_t> length_marker;
 
   // start add metainfo --------------------------------------------------------
@@ -870,8 +871,10 @@ std::string DataSet::saveToMemory(bool preamble) {
     length_marker.push_back(oss.tellp());
   };
 
-  std::function<void(DataSet*)> _saveToMemory;
-  _saveToMemory = [&](DataSet* ds) {
+  // start lambda func for saving ----------------------------------------------
+
+  std::function<void(DataSet*)> _saveToStream;
+  _saveToStream = [&](DataSet* ds) {
     uint8_t buf16_[16];  // temporary buffer for tag, vr, length
     for (auto it = ds->begin(); it != ds->end(); it++) {
       tag_t tag = it->first;
@@ -919,7 +922,7 @@ std::string DataSet::saveToMemory(bool preamble) {
 
             _push_marker();  // explicit byte length of DataSet item
             // Item Value DataSet
-            _saveToMemory(seq->getDataSet(i));
+            _saveToStream(seq->getDataSet(i));
             _pop_marker();  // explicit byte length of DataSet item
           }
 
@@ -939,7 +942,7 @@ std::string DataSet::saveToMemory(bool preamble) {
             oss.write((const char*)buf16_, 8);
 
             // Item Value DataSet
-            _saveToMemory(seq->getDataSet(i));
+            _saveToStream(seq->getDataSet(i));
 
             // Item delim. tag. (FFFE,E00D), Item Length (0)
             store_e<uint16_t>(buf16_, 0xfffe, little_endian);
@@ -1039,8 +1042,7 @@ std::string DataSet::saveToMemory(bool preamble) {
     oss.write((char*)tmp, 128);
     oss.write("DICM", 4);
   }
-  _saveToMemory(this);
-  return oss.str();
+  _saveToStream(this);
 }
 
 void DataSet::loadDicomFile(tag_t load_until){

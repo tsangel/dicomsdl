@@ -86,9 +86,9 @@ void Sequence::load(InStream *instream) {
     length = load_e<uint32_t>(buf + 4, is_little_endian_);
 
     if (length == 0xffffffff) length = instream->bytes_remaining();
-
-    if (length) {
-      DataSet *dataset = addDataSet();
+    
+    DataSet *dataset = addDataSet();
+    if (length) {      
       dataset->attachToInstream(instream, length);
       dataset->setOffset(offset);
       InStream* subs = dataset->instream();
