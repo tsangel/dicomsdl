@@ -250,6 +250,43 @@ charset_t DataSet::getSpecificCharset(int index) {
     return specific_charset1_;
 }
 
+void DataSet::setSpecificCharset(charset_t charset)
+{
+  if (int(charset) > CHARSET::GBK)
+    LOGERROR_AND_THROW("DataSet::setSpecificCharset - unknown charset (%d).",
+                       charset);
+
+  char tmpterm[32];
+  int tmpterm_len;
+
+  switch (charset) {
+    // C.12.1.1.2 Specific Character Set​
+    // Defined Terms for Multi-Byte Character Sets with Code Extensions
+    // ISO 2022 IR 87, ISO 2022 IR 159​, ISO 2022 IR 149, ISO 2022 IR 58​
+    case CHARSET::ISO_2022_IR_87:   // japanese jis x 0208
+    case CHARSET::ISO_2022_IR_159:  // japanese jis x 0212
+    case CHARSET::ISO_2022_IR_149:  // korean
+    case CHARSET::ISO_2022_IR_58:   // simplified chinese
+      tmpterm_len =
+          snprintf(tmpterm, sizeof(tmpterm), "\\%s", CHARSET::term(charset));
+      specific_charset0_ = CHARSET::DEFAULT;  // for convert_to_unicode
+      specific_charset1_ = charset;           // for convert_from_unicode
+      break;
+    default:
+      // C.12.1.1.2 Specific Character Set​
+      // Defined Terms for Single-Byte Character Sets Without Code Extensions​
+      // Defined Terms for Single-Byte Character Sets with Code Extensions​
+      // Defined Terms for Multi-Byte Character Sets Without Code Extensions​
+      // - GB18030, ISO_IR 192, GBK
+      tmpterm_len =
+          snprintf(tmpterm, sizeof(tmpterm), "%s", CHARSET::term(charset));
+      specific_charset0_ = specific_charset1_ = charset;
+      break;
+  }
+
+  addDataElement(0x00080005, VR::CS)->fromBytes(tmpterm, tmpterm_len);
+}
+
 void DataSet::attachToMemory(const uint8_t* data, size_t datasize,
                              bool copy_data) {
   // only root DataSet may have InStream

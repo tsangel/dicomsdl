@@ -224,6 +224,8 @@ struct CHARSET {
 
   static type from_string(const char *s, size_t size); // CHARSET::from_string
   static type from_string(const std::string &s); // CHARSET::from_string
+  static const char* term(type charset);
+  static const char* description(type charset);
 };
 typedef CHARSET::type charset_t;
 
@@ -480,6 +482,7 @@ class DataSet {
   inline bool is_vr_explicit() const { return is_vr_explicit_; }
   inline tsuid_t transfer_syntax() const { return transfer_syntax_; }
   charset_t getSpecificCharset(int index=0);
+  void setSpecificCharset(charset_t charset);
 
   // get/set offset in the file (for DICOMDIR)
   // PS3.3 Table F.3-3. Directory Information Module Attributes

@@ -283,8 +283,13 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .value("KSX1001", CHARSET::KSX1001)
       .value("GB2312", CHARSET::GB2312)
       .value("UTF8", CHARSET::UTF8)
-      .value("UNKNOWN", CHARSET::UNKNOWN)      
-      .export_values();
+      .value("UNKNOWN", CHARSET::UNKNOWN)
+      .export_values()
+      .def("term",
+           [](const CHARSET::type charset) { return CHARSET::term(charset); })
+      .def("description", [](const CHARSET::type charset) {
+        return CHARSET::description(charset);
+      });
   charset.def_static("from_string",
               (charset_t(*)(const std::string &)) & CHARSET::from_string,
               "Get a Specific Character Set from UID value");
@@ -452,6 +457,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("attachToFile", &DataSet::attachToFile)
       .def("attachToMemory", &DataSet::attachToMemory)
       .def("getSpecificCharset", &DataSet::getSpecificCharset, "index"_a = 0)
+      .def("setSpecificCharset", &DataSet::setSpecificCharset)
       .def("dump", &DataSet::dump, "max_length"_a = 120)
       .def(
           "__iter__",

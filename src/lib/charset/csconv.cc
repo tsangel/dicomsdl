@@ -623,6 +623,21 @@ wchar_t *expand_unicode_buffer(conv_stat_t *stat) {
   return stat->wc;
 }
 
+const char* CHARSET::term(charset_t charset)
+{
+  if (int(charset) > CHARSET::GBK)
+    return "(unknown)";
+  return CODESETS[charset].term;
+}
+
+const char* CHARSET::description(charset_t charset)
+{
+  if (int(charset) > CHARSET::GBK)
+    return "(unknown)";
+  return CODESETS[charset].description;
+}
+
+
 // Get character set from string; maybe (0008,0005)
 charset_t CHARSET::from_string(const std::string &s){
   return CHARSET::from_string(s.c_str(), s.size());
