@@ -476,6 +476,8 @@ class DataSet {
   void load(tag_t load_until, InStream *instream);
   void loadDicomFile(tag_t load_until);
 
+  std::string saveToMemory(bool preamble=true);
+
   inline InStream* instream() { return is_.get(); }
 
   inline bool is_little_endian() const { return is_little_endian_; }

@@ -38,6 +38,7 @@ const char *const DICOMSDL_UIDPREFIX = "1.2.826.0.1.3680043.8.417.1";
 const char *const DICOMSDL_IMPLCLASSUID = "1.2.826.0.1.3680043.8.417.1.1";
 const char *const DICOMSDL_IMPLVERNAME = "DICOMSDL 2020SEP";
 const char *const DICOMSDL_FILESETID = "DICOMDIR";
+const char *const DICOMSDL_SOURCEAETITLE = "DICOMSDL";
 
 /* determine machine and compiler ------------------------------------------- */
 

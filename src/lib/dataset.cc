@@ -218,7 +218,7 @@ charset_t DataSet::getSpecificCharset(int index) {
   if (specific_charset0_ == CHARSET::UNKNOWN) {
     DataElement* de = root_dataset_->getDataElement(0x00080005);
 
-    {
+    if (de->isValid()) {
       char* valueptr = (char*)de->value_ptr();
       size_t valuesize = de->length();
 
@@ -234,7 +234,10 @@ charset_t DataSet::getSpecificCharset(int index) {
         specific_charset1_ = CHARSET::from_string(
             lastdelim + 1, valuesize - (lastdelim + 1 - valueptr));
       }
+    } else {
+      specific_charset0_ = specific_charset1_ = CHARSET::DEFAULT;
     }
+
     if (specific_charset0_ == CHARSET::UNKNOWN ||
         specific_charset1_ == CHARSET::UNKNOWN) {
       LOG_WARN("   DataSet::specific_charset - unknown CHARSET \"%s\"",
@@ -632,6 +635,188 @@ void DataSet::load(tag_t load_until, InStream *instream) {
 
   last_tag_loaded_ = load_until;
   if (instream->is_eof()) last_tag_loaded_ = 0xFFFFFFFF;
+}
+
+std::string DataSet::saveToMemory(bool preamble) {
+  std::ostringstream oss(std::ostringstream::binary);
+  std::string chunk;
+
+  // sq_explicit_length = true
+  // Table 7.5-1. Example of a Data Element with Implicit VR Defined as a
+  // Sequence of Items (VR = SQ) with Three Items of Explicit Length.
+  // DataElement 'SQ' length = explicit number
+  // Each items length = explicit number
+  //
+  // sq_explicit_length = false
+  // Table 7.5-3. Example of a Data Element with Implicit VR Defined as a
+  // Sequence of Items (VR = SQ) of Undefined Length, Containing Two Items Where
+  // One Item is of Explicit Length and the Other Item is of Undefined Length
+  // sq_item_length_explicit.
+  // Length = 0xffffffff. Ends with Seq. Delim.​ Tag (FFFE,​ E0DD).
+  // Length of each item = 0xffffffff, ends with Item​ Delim.​ Tag​ (FFFE,​ E00D)
+  bool sq_explicit_length = true;
+  bool writing_metainfo = false;
+
+  bool little_endian = true;
+  bool vr_explicit = true;
+
+  std::vector<size_t> length_marker;
+
+  // start add metainfo --------------------------------------------------------
+  // FileMetaInformationGroupLength
+  addDataElement(0x00020000, VR::UL)->fromLong(0L);
+  // FileMetaInformationVersion
+  addDataElement(0x00020001, VR::OB)->fromBytes("\x00\x01", 2);
+  // MediaStorageSOPClassUID
+  if (!getDataElement(0x00020002)->isValid()) {
+    addDataElement(0x00020002, VR::UI);
+  }
+  // MediaStorageSOPInstanceUID
+  if (!getDataElement(0x00020003)->isValid()) {
+    addDataElement(0x00020003, VR::UI);
+  }
+  // TransferSyntaxUID
+  if (!getDataElement(0x00020010)->isValid()) {
+    addDataElement(0x00020001, VR::UI)
+        ->fromBytes(UID::to_uidvalue(UID::EXPLICIT_VR_LITTLE_ENDIAN));
+  }
+  // ImplementationClassUID
+  addDataElement(0x00020012, VR::UI)->fromBytes(DICOMSDL_IMPLCLASSUID);
+  // ImplementationVersionName
+  addDataElement(0x00020013, VR::SH)->fromBytes(DICOMSDL_IMPLVERNAME);
+  // SourceApplicationEntityTitle
+  addDataElement(0x00020016, VR::AE)->fromBytes(DICOMSDL_SOURCEAETITLE);
+  // end of add metainfo -------------------------------------------------------
+
+  // start lambda func for length calculation ----------------------------------
+
+  std::function<void()> _pop_marker = [&]() {
+    size_t marker_pos = length_marker.back();
+    length_marker.pop_back();
+    size_t cur_pos = oss.tellp();
+
+    size_t length = cur_pos - marker_pos - 4;  // 4 == sizeof(uint32_t)
+    oss.seekp(marker_pos);
+    char tmp[4];
+    store_e<uint32_t>(tmp, length, little_endian);
+    oss.write(tmp, 4);
+    oss.seekp(cur_pos);
+  };
+
+  std::function<void()> _push_marker = [&]() {
+    length_marker.push_back(oss.tellp());
+  };
+
+  std::function<void(DataSet*)> _saveToMemory;
+  _saveToMemory = [&](DataSet* ds) {
+    uint8_t buf16_[16];  // temporary buffer for tag, vr, length
+    for (auto it = ds->begin(); it != ds->end(); it++) {
+      tag_t tag = it->first;
+      DataElement* de = it->second.get();
+      vr_t vr = de->vr();
+
+      if (writing_metainfo && tag > 0x0002ffff) {
+        _pop_marker();
+        writing_metainfo = false;
+        little_endian = this->is_little_endian_;
+        vr_explicit = this->is_vr_explicit_;
+      } else if (!writing_metainfo && tag < 0x0002ffff) {
+        // don't write metainfo
+        continue;
+      }
+
+      store_e<uint16_t>(buf16_, tag >> 16, little_endian);
+      store_e<uint16_t>(buf16_ + 2, tag & 0xffff, little_endian);
+
+      if (vr == VR::SQ) {
+        Sequence* seq = de->toSequence();
+        for (int i = 0; i < seq->size(); i++) {
+          _saveToMemory(seq->getDataSet(i));
+        }
+      } else if (vr== VR::PIXSEQ) {
+        //
+      } else {
+        if (vr_explicit) {
+          switch (vr) {
+            case VR::FL:
+            case VR::FD:
+            case VR::SL:
+            case VR::UL:
+            case VR::SS:
+            case VR::US:
+
+            case VR::AE:
+            case VR::AS:
+            case VR::AT:
+            case VR::CS:
+            case VR::DA:
+            case VR::DS:
+            case VR::DT:
+            case VR::IS:
+            case VR::LO:
+            case VR::LT:
+            case VR::PN:
+            case VR::SH:
+            case VR::ST:
+            case VR::TM:
+            case VR::UI:
+              // PS 3.5-2020, Table 7.1-2
+              // Data Element with Explicit VR of AE, AS, AT, CS, DA, DS, DT, FL,
+              // FD, IS, LO, LT, PN, SH, SL, SS, ST, TM, UI, UL and US
+
+              // VR 2 bytes, length 2 bytes
+              *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
+              store_e<uint16_t>(buf16_ + 6, de->length(), little_endian);
+              oss.write((const char *)buf16_, 8);
+              break;
+
+            case VR::OB:
+            case VR::OD:
+            case VR::OF:
+            case VR::OL:
+            case VR::OV:
+            case VR::OW:
+            case VR::UN:
+            case VR::SV:
+            case VR::UC:
+            case VR::UR:
+            case VR::UV:
+            default:
+              // VR 2 bytes, 0000h, length 4 bytes
+              *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
+              store_e<uint16_t>(buf16_ + 6, 0, little_endian);
+              store_e<uint32_t>(buf16_ + 8, de->length(), little_endian);
+              oss.write((const char *)buf16_, 12);
+              break;
+          }
+        } else { // vr_explicit == false, little_endian should be true.
+            // length 4 bytes
+            store_le<uint32_t>(buf16_ + 4, de->length());
+            oss.write((const char *)buf16_, 8);
+        }
+
+        if ((tag & 0xffff) == 0x0000) {
+          if (tag == 0x00020000) {
+            // FileMetaInformationGroupLength is mandatory
+            _push_marker();
+          } else {
+            // GroupLength is deprecated.
+          }
+        }
+        oss.write((char *)de->value_ptr(), de->length());
+      }
+    }
+  };
+  // end of lambda func --------------------------------------------------------
+
+  if (preamble && writing_metainfo) {
+    uint16_t tmp[128];
+    ::memset(tmp, 0, 128);
+    oss.write((char*)tmp, 128);
+    oss.write("DICM", 4);
+  }
+  _saveToMemory(this);
+  return oss.str();
 }
 
 void DataSet::loadDicomFile(tag_t load_until){
