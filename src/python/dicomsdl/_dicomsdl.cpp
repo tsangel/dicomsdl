@@ -212,6 +212,10 @@ PYBIND11_MODULE(_dicomsdl, m) {
           "Convert UID valud to tsuid. e.g. '1.2.840.10008.1.2.1' -> "
           "UID.EXPLICIT_VR_LITTLE_ENDIAN");
 
+  py::class_<Config>(m, "Config")
+    .def_static("get", &Config::get)
+    .def_static("set", &Config::set);
+
   py::class_<TAG>(m, "TAG")
       .def_static(
           "repr", &TAG::repr,

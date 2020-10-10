@@ -476,6 +476,15 @@ class DataSet {
   void load(tag_t load_until, InStream *instream);
   void loadDicomFile(tag_t load_until);
 
+  // Config::set("SAVE_SQ_EXPLICIT_LENGTH", "TRUE")
+  // Config::set("SAVE_SQ_EXPLICIT_LENGTH", "FALSE")
+  // - Write explicit length of Sequence and its DataSet items if "TRUE".
+  // Config::set("WRITE_METAINFO", "TRUE")
+  // Config::set("WRITE_METAINFO", "FALSE")
+  // - Write File Meta Information if "TRUE".
+  // Config::set("WRITE_PREAMBLE", "TRUE")
+  // Config::set("WRITE_PREAMBLE", "FALSE")
+  // - Write preamble 132 bytes (128 '\0's and "DICM") if "TRUE".
   std::string saveToMemory(bool preamble=true);
 
   inline InStream* instream() { return is_.get(); }
@@ -622,6 +631,35 @@ DicomException build_exception(const char* m, ...);
     LOG_ERROR(__VA_ARGS__);     \
     throw EXCEPTION(__VA_ARGS__) \
   } while (0);
+
+// PixelSequence ===============================================================
+
+class Config {
+  std::map<std::string, std::string> dict_;
+
+ public:
+  static Config& getInstance() {
+    static Config instance;
+    return instance;
+  }
+
+  static const char* get(const char *key, const char *default_value) {
+    return Config::getInstance()._get(key, default_value);
+  }
+  static void set(const char *key, const char *value){
+    Config::getInstance()._set(key, value);
+  }
+
+  Config() = default;
+  ~Config() = default;
+
+ private:
+  const char* _get(const char *key, const char *default_value);
+  void _set(const char *key, const char *value);
+
+  Config(const Config&) = delete;
+  Config& operator=(const Config&) = delete;
+};
 
 // Logger ======================================================================
 

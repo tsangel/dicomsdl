@@ -641,21 +641,22 @@ std::string DataSet::saveToMemory(bool preamble) {
   std::ostringstream oss(std::ostringstream::binary);
   std::string chunk;
 
-  // sq_explicit_length = true
+  bool sq_explicit_length =
+      Config::get("SAVE_SQ_EXPLICIT_LENGTH", "TRUE")[0] == 'T';
+  bool writing_metainfo = Config::get("WRITE_METAINFO", "TRUE")[0] == 'T';
+  bool writing_preamble = Config::get("WRITE_PREAMBLE", "TRUE")[0] == 'T';
+
+  // SAVE_SQ_EXPLICIT_LENGTH = true
   // Table 7.5-1. Example of a Data Element with Implicit VR Defined as a
   // Sequence of Items (VR = SQ) with Three Items of Explicit Length.
-  // DataElement 'SQ' length = explicit number
-  // Each items length = explicit number
   //
-  // sq_explicit_length = false
+  // SAVE_SQ_EXPLICIT_LENGTH = false
   // Table 7.5-3. Example of a Data Element with Implicit VR Defined as a
   // Sequence of Items (VR = SQ) of Undefined Length, Containing Two Items Where
   // One Item is of Explicit Length and the Other Item is of Undefined Length
   // sq_item_length_explicit.
   // Length = 0xffffffff. Ends with Seq. Delim.​ Tag (FFFE,​ E0DD).
   // Length of each item = 0xffffffff, ends with Item​ Delim.​ Tag​ (FFFE,​ E00D)
-  bool sq_explicit_length = true;
-  bool writing_metainfo = false;
 
   bool little_endian = true;
   bool vr_explicit = true;
@@ -695,8 +696,8 @@ std::string DataSet::saveToMemory(bool preamble) {
     length_marker.pop_back();
     size_t cur_pos = oss.tellp();
 
-    size_t length = cur_pos - marker_pos - 4;  // 4 == sizeof(uint32_t)
-    oss.seekp(marker_pos);
+    size_t length = cur_pos - marker_pos;
+    oss.seekp(marker_pos - 4);
     char tmp[4];
     store_e<uint32_t>(tmp, length, little_endian);
     oss.write(tmp, 4);
@@ -729,11 +730,70 @@ std::string DataSet::saveToMemory(bool preamble) {
       store_e<uint16_t>(buf16_ + 2, tag & 0xffff, little_endian);
 
       if (vr == VR::SQ) {
-        Sequence* seq = de->toSequence();
-        for (int i = 0; i < seq->size(); i++) {
-          _saveToMemory(seq->getDataSet(i));
+        if (vr_explicit) {
+          // vr 2 bytes, 0000h
+          *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
+          store_e<uint16_t>(buf16_ + 6, 0, little_endian);
+          oss.write((const char*)buf16_, 8);
         }
-      } else if (vr== VR::PIXSEQ) {
+
+        // length 4 bytes.
+        store_e<uint32_t>(buf16_, 0xffffffff, little_endian);
+        oss.write((const char*)buf16_, 4);
+
+        if (sq_explicit_length) {
+          // Table 7.5-1. Example of a Data Element with Implicit VR Defined as
+          // a Sequence of Items (VR = SQ) with Three Items of Explicit Length.
+
+          _push_marker();  // explicit bytes length of Sequence
+
+          Sequence* seq = de->toSequence();
+          for (int i = 0; i < seq->size(); i++) {
+            // Item tag. (FFFE,E000), Item Length
+            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+            store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+            oss.write((const char*)buf16_, 8);
+
+            _push_marker();  // explicit byte length of DataSet item
+            // Item Value DataSet
+            _saveToMemory(seq->getDataSet(i));
+            _pop_marker();  // explicit byte length of DataSet item
+          }
+
+          _pop_marker();  // explicit bytes length of Sequence
+        } else {
+          // Table 7.5-3. Example of a Data Element with Implicit VR Defined as
+          // a Sequence of Items (VR = SQ) of Undefined Length, Containing Two
+          // Items Where One Item is of Explicit Length and the Other Item is of
+          // Undefined Length sq_item_length_explicit.
+
+          Sequence* seq = de->toSequence();
+          for (int i = 0; i < seq->size(); i++) {
+            // Item tag. (FFFE,E000), Item Length (FFFFFFFFH)
+            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+            store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+            oss.write((const char*)buf16_, 8);
+
+            // Item Value DataSet
+            _saveToMemory(seq->getDataSet(i));
+
+            // Item delim. tag. (FFFE,E00D), Item Length (0)
+            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe00d, little_endian);
+            store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+            oss.write((const char*)buf16_, 8);
+          }
+
+          // Seq. delim. tag. (FFFE,E0DD), Item Length (0)
+          store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+          store_e<uint16_t>(buf16_ + 2, 0xe0dd, little_endian);
+          store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+          oss.write((const char*)buf16_, 8);
+        }
+
+      } else if (vr == VR::PIXSEQ) {
         //
       } else {
         if (vr_explicit) {
@@ -761,13 +821,13 @@ std::string DataSet::saveToMemory(bool preamble) {
             case VR::TM:
             case VR::UI:
               // PS 3.5-2020, Table 7.1-2
-              // Data Element with Explicit VR of AE, AS, AT, CS, DA, DS, DT, FL,
-              // FD, IS, LO, LT, PN, SH, SL, SS, ST, TM, UI, UL and US
+              // Data Element with Explicit VR of AE, AS, AT, CS, DA, DS, DT,
+              // FL, FD, IS, LO, LT, PN, SH, SL, SS, ST, TM, UI, UL and US
 
               // VR 2 bytes, length 2 bytes
               *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
               store_e<uint16_t>(buf16_ + 6, de->length(), little_endian);
-              oss.write((const char *)buf16_, 8);
+              oss.write((const char*)buf16_, 8);
               break;
 
             case VR::OB:
@@ -786,30 +846,32 @@ std::string DataSet::saveToMemory(bool preamble) {
               *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
               store_e<uint16_t>(buf16_ + 6, 0, little_endian);
               store_e<uint32_t>(buf16_ + 8, de->length(), little_endian);
-              oss.write((const char *)buf16_, 12);
+              oss.write((const char*)buf16_, 12);
               break;
           }
-        } else { // vr_explicit == false, little_endian should be true.
-            // length 4 bytes
-            store_le<uint32_t>(buf16_ + 4, de->length());
-            oss.write((const char *)buf16_, 8);
-        }
+        } else {  // vr_explicit == false, little_endian should be true.
+          // length 4 bytes
+          store_le<uint32_t>(buf16_ + 4, de->length());
+          oss.write((const char*)buf16_, 8);
+        }  // if (vr_explicit)
 
-        if ((tag & 0xffff) == 0x0000) {
-          if (tag == 0x00020000) {
-            // FileMetaInformationGroupLength is mandatory
-            _push_marker();
-          } else {
-            // GroupLength is deprecated.
-          }
+        oss.write((char*)de->value_ptr(), de->length());
+      }  // vr == VR::SQ or VR::PIXSEQ or VR::...
+
+      // Calculate group length
+      if ((tag & 0xffff) == 0x0000) {
+        if (tag == 0x00020000) {
+          // FileMetaInformationGroupLength is mandatory
+          _push_marker();
+        } else {
+          // GroupLength is deprecated.
         }
-        oss.write((char *)de->value_ptr(), de->length());
       }
-    }
+    }  // for (auto it = ds->begin(); it != ds->end(); it++)
   };
   // end of lambda func --------------------------------------------------------
 
-  if (preamble && writing_metainfo) {
+  if (writing_preamble && writing_metainfo) {
     uint16_t tmp[128];
     ::memset(tmp, 0, 128);
     oss.write((char*)tmp, 128);
