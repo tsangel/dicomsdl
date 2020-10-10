@@ -8,6 +8,8 @@ from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
+USE_DEBUG_MESSAGE=False
+
 def get_dicomsdl_version():
     lines = open('src/include/dicomcfg.h').readlines()
     line = [l for l in lines if 'DICOMSDL_VERSION' in l][0]
@@ -47,6 +49,9 @@ class CMakeBuild(build_ext):
 
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable]
+
+        if USE_DEBUG_MESSAGE:
+            cmake_args.append('-DUSE_DEBUG_MESSAGE=ON')
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]

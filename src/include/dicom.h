@@ -490,6 +490,8 @@ class DataSet {
   void saveToFile(const char *filename);
   std::string saveToMemory();
 
+  void close();
+
   inline InStream* instream() { return is_.get(); }
 
   inline bool is_little_endian() const { return is_little_endian_; }

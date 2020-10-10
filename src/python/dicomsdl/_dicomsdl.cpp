@@ -474,6 +474,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("save", &DataSet::saveToFile)
       .def("saveToMemory",
            [](DataSet &ds) { return py::bytes(ds.saveToMemory()); })
+      .def("close", &DataSet::close)
       .def(
           "__iter__",
           [](DataSet &ds) {

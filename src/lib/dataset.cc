@@ -47,10 +47,15 @@ DataSet::DataSet(DataSet* parent)
   last_tag_loaded_ = 0x0;
   UINT64(buf8_) = 0;
   specific_charset0_ = CHARSET::UNKNOWN; // use root_dataset's charset
-  LOG_DEBUG("++ @%p\tDataSet::DataSet(DataSet*) parent @p", this, parent);
+  LOG_DEBUG("++ @%p\tDataSet::DataSet(DataSet*) parent @%p", this, parent);
 }
 
 DataSet::~DataSet() { LOG_DEBUG("-- @%p\t~DataSet::~DataSet()", this); }
+
+void DataSet::close() {
+  edict_.clear();
+  detach();  
+}
 
 DataElement* DataSet::addDataElement(tag_t tag, vr_t vr, uint32_t length,
                                      size_t offset) {
@@ -1121,7 +1126,7 @@ void DataSet::loadDicomFile(tag_t load_until){
   }
 }
 
-void DataSet::detach() { is_.reset(); }
+void DataSet::detach() { is_.reset(nullptr); }
 
 std::unique_ptr<DataSet> open_file(const char* filename, tag_t load_until,
                                    bool keep_on_error) {
