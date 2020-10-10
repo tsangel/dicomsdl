@@ -448,9 +448,16 @@ PYBIND11_MODULE(_dicomsdl, m) {
 
   py::class_<DataSet>(m, "DataSet")
       .def(py::init<>())
-      .def("addDataElement", &DataSet::addDataElement,
+      .def("addDataElement",
+           (DataElement * (DataSet::*)(tag_t, vr_t, uint32_t, size_t)) &
+               DataSet::addDataElement,
            py::return_value_policy::reference_internal, "tag"_a,
            "vr"_a = VR::NONE, "length"_a = 0, "offset"_a = 0)
+      .def("addDataElement",
+           (DataElement * (DataSet::*)(const char *, vr_t)) &
+               DataSet::addDataElement,
+           py::return_value_policy::reference_internal, "tag"_a,
+           "vr"_a = VR::NONE)
       .def("getDataElement",
            (DataElement * (DataSet::*)(tag_t)) & DataSet::getDataElement,
            py::return_value_policy::reference_internal)

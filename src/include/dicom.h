@@ -457,6 +457,7 @@ class DataSet {
 
   DataElement* addDataElement(tag_t tag, vr_t vr = VR::NONE,
                               uint32_t length = 0, size_t offset = 0);
+  DataElement* addDataElement(const char *tagstr, vr_t vr = VR::NONE);
   DataElement* getDataElement(tag_t tag);
   DataElement* getDataElement(const char *tagstr);
   inline DataElement& operator[](tag_t tag) { return *getDataElement(tag); }
