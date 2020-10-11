@@ -436,6 +436,12 @@ void DataSet::setSpecificCharset(charset_t charset)
     // ISO 2022 IR 87, ISO 2022 IR 159​, ISO 2022 IR 149, ISO 2022 IR 58​
     case CHARSET::ISO_2022_IR_87:   // japanese jis x 0208
     case CHARSET::ISO_2022_IR_159:  // japanese jis x 0212
+      tmpterm_len = snprintf(tmpterm, sizeof(tmpterm), "%s\\%s",
+                             CHARSET::term(CHARSET::ISO_2022_IR_13),
+                             CHARSET::term(charset));
+      specific_charset0_ = CHARSET::ISO_2022_IR_13;  // for convert_to_unicode
+      specific_charset1_ = charset;                  // for convert_from_unicode
+      break;
     case CHARSET::ISO_2022_IR_149:  // korean
     case CHARSET::ISO_2022_IR_58:   // simplified chinese
       tmpterm_len =
