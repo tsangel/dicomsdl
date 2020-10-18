@@ -214,7 +214,9 @@ PYBIND11_MODULE(_dicomsdl, m) {
 
   py::class_<Config>(m, "Config")
     .def_static("get", &Config::get)
-    .def_static("set", &Config::set);
+    .def_static("set", &Config::set)
+    .def_static("getInteger", &Config::getInteger)
+    .def_static("setInteger", &Config::setInteger);
 
   py::class_<TAG>(m, "TAG")
       .def_static(

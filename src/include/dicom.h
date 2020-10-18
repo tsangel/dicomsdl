@@ -654,6 +654,12 @@ class Config {
   static void set(const char *key, const char *value){
     Config::getInstance()._set(key, value);
   }
+  static long getInteger(const char *key, long default_value) {
+    return Config::getInstance()._getInteger(key, default_value);
+  }
+  static void setInteger(const char *key, const long value) {
+    Config::getInstance()._setInteger(key, value);
+  }
 
   Config() = default;
   ~Config() = default;
@@ -661,6 +667,8 @@ class Config {
  private:
   const char* _get(const char *key, const char *default_value);
   void _set(const char *key, const char *value);
+  long _getInteger(const char *key, long default_value);
+  void _setInteger(const char *key, long value);
 
   Config(const Config&) = delete;
   Config& operator=(const Config&) = delete;
