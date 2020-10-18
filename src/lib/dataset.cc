@@ -830,6 +830,12 @@ void DataSet::saveToStream(std::ostream& oss) {
       Config::get("SAVE_SQ_EXPLICIT_LENGTH", "TRUE")[0] == 'T';
   bool writing_metainfo = Config::get("WRITE_METAINFO", "TRUE")[0] == 'T';
   bool writing_preamble = Config::get("WRITE_PREAMBLE", "TRUE")[0] == 'T';
+  // fragment_size is the size of the pixel fragments in PixelSequence.
+  // 0xfffffffe is the largest even uint32_t number.
+  // User may change pixel fragment's size, but is not recommended. Many
+  // implementations cannot read fragmented frames in the multiframe pixeldata.
+  size_t fragment_size =
+      (size_t)Config::getInteger("PIXEL_FRAGMENT_SIZE", 0xfffffffe);
 
   bool little_endian = true;
   bool vr_explicit = true;
@@ -976,18 +982,11 @@ void DataSet::saveToStream(std::ostream& oss) {
         store_e<uint32_t>(buf16_ + 8, 0xFFFFFFFF, little_endian);
         oss.write((const char*)buf16_, 12);
 
-        // load configuration for pixel encoding
-        size_t fragment_size = 1;
-        size_t fragsiz_ = (size_t)Config::getInteger("PIXEL_FRAGMENT_SIZE", 0);
-        if (fragsiz_) {
-          fragsiz_ /= 2;
-          while (fragsiz_) {
-            fragsiz_ /= 2;
-            fragment_size *= 2;
-          }
-        }  // fragment_size become power of 2
-        else
-          fragment_size = 0;
+        // check fragment_size loaded from configuration.
+        if (fragment_size & 1)
+          fragment_size += 1;
+        if (fragment_size < 1024)
+          fragment_size = 1024;
 
         PixelSequence *pixseq = de->toPixelSequence();
         size_t nframes = pixseq->numberOfFrames();
@@ -1018,12 +1017,8 @@ void DataSet::saveToStream(std::ostream& oss) {
             oss.write((const char*)buf16_, 4);
             size_t framesize = pixseq->frameEncodedDataLength(idx);
             assert ((framesize & 1) == 0);  // length should be even
-            size_t nfrags = 1;
-            if (fragment_size > 0) {
-              nfrags = framesize / fragment_size;
-              if (nfrags * fragment_size < framesize)
-                nfrags += 1;
-            }
+            size_t nfrags = framesize / fragment_size;
+            if (nfrags * fragment_size < framesize) nfrags += 1;
             framesize += nfrags * 8;  // Item Tag = 4B, Item Length = 4B
             offset += framesize;
           }
