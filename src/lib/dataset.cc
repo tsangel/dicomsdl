@@ -431,9 +431,9 @@ void DataSet::setSpecificCharset(charset_t charset)
   int tmpterm_len;
 
   switch (charset) {
-    // C.12.1.1.2 Specific Character Set​
+    // C.12.1.1.2 Specific Character Set
     // Defined Terms for Multi-Byte Character Sets with Code Extensions
-    // ISO 2022 IR 87, ISO 2022 IR 159​, ISO 2022 IR 149, ISO 2022 IR 58​
+    // ISO 2022 IR 87, ISO 2022 IR 159, ISO 2022 IR 149, ISO 2022 IR 58
     case CHARSET::ISO_2022_IR_87:   // japanese jis x 0208
     case CHARSET::ISO_2022_IR_159:  // japanese jis x 0212
       tmpterm_len = snprintf(tmpterm, sizeof(tmpterm), "%s\\%s",
@@ -450,10 +450,10 @@ void DataSet::setSpecificCharset(charset_t charset)
       specific_charset1_ = charset;           // for convert_from_unicode
       break;
     default:
-      // C.12.1.1.2 Specific Character Set​
-      // Defined Terms for Single-Byte Character Sets Without Code Extensions​
-      // Defined Terms for Single-Byte Character Sets with Code Extensions​
-      // Defined Terms for Multi-Byte Character Sets Without Code Extensions​
+      // C.12.1.1.2 Specific Character Set
+      // Defined Terms for Single-Byte Character Sets Without Code Extensions
+      // Defined Terms for Single-Byte Character Sets with Code Extensions
+      // Defined Terms for Multi-Byte Character Sets Without Code Extensions
       // - GB18030, ISO_IR 192, GBK
       tmpterm_len =
           snprintf(tmpterm, sizeof(tmpterm), "%s", CHARSET::term(charset));
@@ -970,7 +970,100 @@ void DataSet::saveToStream(std::ostream& oss) {
         }
 
       } else if (vr == VR::PIXSEQ) {
-        //
+        // VR is 'OB' and lenght shall be set to FFFFFFFFH
+        *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(VR::OB));  // 'OB'
+        store_e<uint16_t>(buf16_ + 6, 0, little_endian);  // 0000H
+        store_e<uint32_t>(buf16_ + 8, 0xFFFFFFFF, little_endian);
+        oss.write((const char*)buf16_, 12);
+
+        // load configuration for pixel encoding
+        size_t fragment_size = 1;
+        size_t fragsiz_ = (size_t)Config::getInteger("PIXEL_FRAGMENT_SIZE", 0);
+        if (fragsiz_) {
+          fragsiz_ /= 2;
+          while (fragsiz_) {
+            fragsiz_ /= 2;
+            fragment_size *= 2;
+          }
+        }  // fragment_size become power of 2
+        else
+          fragment_size = 0;
+
+        PixelSequence *pixseq = de->toPixelSequence();
+        size_t nframes = pixseq->numberOfFrames();
+        if (nframes <= 1) {
+          // Table A.4-1. Example for Elements of an Encoded Single-Frame Image
+          // Defined as a Sequence of Three Fragments Without Basic Offset
+          // Item Tag (FFFE,E000)
+          store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+          store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+          // Item Length 0000 0000H
+          store_e<uint32_t>(buf16_ + 4, 0x00000000, little_endian);
+          oss.write((const char*)buf16_, 8);
+        } else {
+          // Table A.4-2. Examples of Elements for an Encoded Two-Frame Image
+          // Defined as a Sequence of Three Fragments with Basic Table Item
+          // Values
+
+          // Item Tag (FFFE,E000)
+          store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+          store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+          // Item Length 4 * nframes
+          store_e<uint32_t>(buf16_ + 4, nframes * 4, little_endian);
+          oss.write((const char*)buf16_, 8);
+
+          size_t offset = 0;
+          for (int idx = 0; idx < pixseq->numberOfFrames(); idx++) {
+            store_e<uint32_t>(buf16_, offset, little_endian);
+            oss.write((const char*)buf16_, 4);
+            size_t framesize = pixseq->frameEncodedDataLength(idx);
+            assert ((framesize & 1) == 0);  // length should be even
+            size_t nfrags = 1;
+            if (fragment_size > 0) {
+              nfrags = framesize / fragment_size;
+              if (nfrags * fragment_size < framesize)
+                nfrags += 1;
+            }
+            framesize += nfrags * 8;  // Item Tag = 4B, Item Length = 4B
+            offset += framesize;
+          }
+        }
+
+        // WRITING FRAMES
+        for (size_t idx = 0; idx < pixseq->numberOfFrames(); idx++) {
+          Buffer<uint8_t> encdata = pixseq->frameEncodedData(idx);
+          const char *data = (const char *)encdata.data;
+          size_t bytesremaining = encdata.size;
+
+          while (bytesremaining) {
+            size_t bytestowrite;
+            if (fragment_size == 0 || bytesremaining < fragment_size) {
+              bytestowrite = bytesremaining;
+            } else {
+              bytestowrite = fragment_size;
+            }
+
+            // Item Tag (FFFE,E000)
+            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+            // Item Length
+            store_e<uint32_t>(buf16_ + 4, bytestowrite, little_endian);
+            oss.write((const char*)buf16_, 8);
+
+            // write frame contents
+            oss.write(data, bytestowrite);
+
+            data += bytestowrite;
+            bytesremaining -= bytestowrite;            
+          }
+        }
+
+        // Sequence Delim. Tag (FFFE,E0DD)
+        store_e<uint16_t>(buf16_, 0xfffe, little_endian);
+        store_e<uint16_t>(buf16_ + 2, 0xe0dd, little_endian);
+        // Item Length 0000 0000H
+        store_e<uint32_t>(buf16_ + 4, 0x00000000, little_endian);
+        oss.write((const char*)buf16_, 8);
       } else {
         if (vr_explicit) {
           switch (vr) {
