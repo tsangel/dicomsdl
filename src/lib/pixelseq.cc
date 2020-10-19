@@ -33,6 +33,12 @@ PixelSequence::~PixelSequence() {
   LOG_DEBUG("-- @%p\tPixelSequence::PixelSequence()", this);
 }
 
+PixelFrame* PixelSequence::addPixelFrame() {
+    frames_.push_back(
+          std::unique_ptr<PixelFrame>(new PixelFrame()));
+    return frames_.back().get();
+}
+
 void PixelSequence::attachToInstream(InStream *basestream, size_t size)
 {
   is_ = std::unique_ptr<InStream>(new InSubStream(basestream, size));
@@ -52,11 +58,42 @@ bool check_have_ffd9(uint8_t *p, size_t size) {
   return false;
 }
 
+void PixelFrame::setEncodedData(uint8_t *data, size_t size)
+{
+  startoffset_ = endoffset_ = 0;
+  if (encoded_data_) {
+    ::free(encoded_data_);
+    encoded_data_ = nullptr;
+    encoded_data_size_ = 0;
+  }
+
+  encoded_data_ = (uint8_t *)::malloc(size);
+  if (!encoded_data_) {
+    LOGERROR_AND_THROW(
+        "PixelFrame::setEncodedData(uint8_t*, size_t) - "
+        "cannot allocate %zd bytes for the encoded_data_.",
+        size);
+  }
+  encoded_data_size_ = size;
+  ::memcpy(encoded_data_, data, size);
+}
+
 void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
+  if (encoded_data_) {
+    // should not occur.
+    LOGERROR_AND_THROW(
+        "PixelFrame::load - cannot load if encoded_data_ exists.");
+  }
+
+  startoffset_ = instream->tell();
+  LOG_DEBUG("   @%p\tPixelFrame::load - start loading a frame at {%#x}.", this,
+            startoffset_);
+
   // instream->tell() should locate the position of the start of frame
   tag_t tag;
   size_t length;
   long remaining_bytes = (long)frame_length;
+  encoded_data_size_ = 0;
 
   while (true) {
     if (instream->read(buf, 8) != 8) {
@@ -70,6 +107,7 @@ void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
     tag = TAG::load_32le(buf);
     // Item Length (4 bytes)
     length = load_le<uint32_t>(buf + 4);
+    encoded_data_size_ += length;
 
     remaining_bytes -= 8;
 
@@ -82,7 +120,7 @@ void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
     size_t frag_offset = instream->tell();
     size_t n = instream->skip(length);
     if (n != length) {
-      LOGERROR_AND_THROW("PixelFrame::load- cannot skip %d bytes from {%#x}.",
+      LOGERROR_AND_THROW("PixelFrame::load - cannot skip %d bytes from {%#x}.",
                          length, instream->tell() - n);
     }
     remaining_bytes -= length;
@@ -99,15 +137,16 @@ void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
     // end of image or codestream marker?; end this frame.
     uint8_t *frag_data = (uint8_t *)instream->get_pointer(frag_offset, length);
     if (check_have_ffd9(frag_data, length) && (remaining_bytes < 8)) {
+      puts("BREAK!!!");
       break;
       // 8 remaining_bytes may be for (fffe,e0dd)
-    }
+    }    
   }
   // instream->tell() should locate the position of the end of frame
   endoffset_ = instream->tell();
 }
 
-void PixelSequence::readOffsetTable()
+void PixelSequence::loadFrames()
 {
   uint8_t buf[8];
   tag_t tag;
@@ -118,7 +157,7 @@ void PixelSequence::readOffsetTable()
   // Assert Tag is 'Item Tag'
   if (instream->read(buf, 8) != 8)
     LOGERROR_AND_THROW(
-        "PixelSequence::readOffsetTable - cannot read 8 bytes from {%#x}",
+        "PixelSequence::loadFrames - cannot read 8 bytes from {%#x}",
         instream->tell());
 
   tag = TAG::load_32le(buf);
@@ -127,12 +166,12 @@ void PixelSequence::readOffsetTable()
   // Assert Tag is 'Item Tag'
   if (tag != 0xfffee000)
     LOGERROR_AND_THROW(
-        "PixelSequence::readOffsetTable - first item's tag should be "
+        "PixelSequence::loadFrames - first item's tag should be "
         "(FFFE,E000), but %s is encountered at {%#x}",
         TAG::repr(tag).c_str(), instream->tell() - 8);
   if (length >= instream->bytes_remaining())
     LOGERROR_AND_THROW(
-        "PixelSequence::readOffsetTable - length of Basic Table Item "
+        "PixelSequence::loadFrames - length of Basic Table Item "
         "Values(%u at {%#x}) is too large.",
         length, instream->tell() - 4);
 
@@ -149,7 +188,7 @@ void PixelSequence::readOffsetTable()
     n = instream->read((uint8_t *) &offsets[0], length);
     if (n != length) {
       LOGERROR_AND_THROW(
-          "PixelSequence::readOffsetTable - Could not read %u bytes from "
+          "PixelSequence::loadFrames - Could not read %u bytes from "
           "{%#x} for basic offset table",
           length, instream->tell() - n);
     }
@@ -172,21 +211,30 @@ void PixelSequence::readOffsetTable()
 
     // make PixelFrames
     PixelFrame *frame;
+    size_t last_endpos = 0;
     for (int i = 0; i < offset_table_items; i++) {
       size_t startpos = offsets[i];
       size_t endpos = temp_offset_map[offsets[i]];
       if (endpos == 0)
         endpos = startpos+instream->bytes_remaining();
-      frames_.push_back(
-          std::unique_ptr<PixelFrame>(new PixelFrame(base_offset_ + startpos)));
-      frame = frames_.back().get();
+
+      frame = addPixelFrame();
+
+      // frame->startoffset_ <- base_offset_ + startpos
+      instream->seek(base_offset_ + startpos);
       frame->load(instream, endpos-startpos, buf);
+      if (instream->tell() > last_endpos)
+        last_endpos = instream->tell();
     }
 
-    LOG_DEBUG("   @%p\tPixelSequence::readOffsetTable - "
+    // instream->tell() is located just after item with tag (fffe,e0dd).
+    // ; frame->load already ate that item.
+    instream->seek(last_endpos);
+
+    LOG_DEBUG("   @%p\tPixelSequence::loadFrames - "
               "basic offset table with %d item(s) at {%#x}",
               this, offset_table_items, base_offset_);
-  } else {
+  } else {  // no basic offset table
     // Table A.4-1. Example for Elements of an Encoded Single-Frame Image
     // Defined as a Sequence of Three Fragments
     // Without Basic Offset Table Item Value
@@ -195,11 +243,7 @@ void PixelSequence::readOffsetTable()
     base_offset_ = instream->tell();
 
     while (true) {
-      size_t frame_offset = instream->tell();
-
-      frames_.push_back(
-          std::unique_ptr<PixelFrame>(new PixelFrame(frame_offset)));
-      frame = frames_.back().get();
+      frame = addPixelFrame();
       frame->load(instream, instream->bytes_remaining(), buf);
 
       // last frame->load store tag/length information to the buf
@@ -216,11 +260,10 @@ void PixelSequence::readOffsetTable()
       frames_.pop_back();
     }
 
-    LOG_DEBUG("   @%p\tPixelSequence::readOffsetTable - "
+    LOG_DEBUG("   @%p\tPixelSequence::loadFrames - "
               "pixel sequence (%d frames) without basic offset table",
               this, frames_.size());
   }
-
 }
 
 // return start and end offset of `frame` with `index`
@@ -236,63 +279,74 @@ size_t PixelSequence::frameOffset(size_t index, size_t &end_offset) {
 size_t PixelSequence::frameEncodedDataLength(size_t index) {
   if (index >= frames_.size())
     LOGERROR_AND_THROW(
-        "PixelSequence::frameEncodedDataLength - index '%d' is out of range(0..%d)",
-        index, (long)frames_.size()-1)
+        "PixelSequence::frameEncodedDataLength - index '%d' is out of "
+        "range(0..%d)",
+        index, (long)frames_.size() - 1)
 
   PixelFrame *frame = frames_[index].get();
-
-  size_t nfrags = frame->frag_offsets_.size() / 2;
-  size_t length = 0;
-  for (size_t i = 0; i < nfrags; i++) {
-    length += frame->frag_offsets_[i*2+1] - frame->frag_offsets_[i*2];
-  }
-  return length;
+  return frame->encodedDataSize();
 }
 
 std::vector<size_t> PixelSequence::frameFragmentOffsets(size_t index) {
   if (index >= frames_.size())
     LOGERROR_AND_THROW(
-        "PixelSequence::frameFragmentOffsets - index '%d' is out of range(0..%d)",
-        index, (long)frames_.size()-1);
+        "PixelSequence::frameFragmentOffsets - index '%d' is out of "
+        "range(0..%d)",
+        index, (long)frames_.size() - 1);
 
   return frames_[index].get()->frag_offsets_;
 }
 
-Buffer<uint8_t> PixelSequence::frameEncodedData(size_t index) {
+Buffer<uint8_t> PixelSequence::encodedFrameData(size_t index) {
   if (index >= frames_.size())
     LOGERROR_AND_THROW(
-        "PixelSequence::frameEncodedData - index '%d' is out of range(0..%d)",
+        "PixelSequence::encodedFrameData - index '%d' is out of range(0..%d)",
         index, (long)frames_.size()-1);
 
   PixelFrame *frame = frames_[index].get();
 
-  if (frame->frag_offsets_.size() == 2) {
-    // this frame has one fragment; returned buffer points to internal memory.
-    size_t startpos = frame->frag_offsets_[0];
-    size_t length = frame->frag_offsets_[1] - startpos;
-    return Buffer<uint8_t>(
-        (uint8_t *)(is_.get()->get_pointer(startpos, length)), length);
+  if (frame->encoded_data_) {
+    return Buffer<uint8_t>(frame->encoded_data_, frame->encoded_data_size_);
   } else {
-    // frame is split into several fragments; allocate memory for joined data.
-    size_t nfrags = frame->frag_offsets_.size() / 2;
-    size_t length = 0;
-    // calculate entire length
-    for (size_t i = 0; i < nfrags; i++) {
-      length += frame->frag_offsets_[i * 2 + 1] - frame->frag_offsets_[i * 2];
+    if (frame->frag_offsets_.size() == 2) {
+      // this frame has one fragment; returned buffer points to internal memory.
+      size_t startpos = frame->frag_offsets_[0];
+      size_t length = frame->frag_offsets_[1] - startpos;
+      return Buffer<uint8_t>(
+          (uint8_t *)(is_.get()->get_pointer(startpos, length)), length);
+    } else {
+      // frame is split into several fragments; allocate memory for joined data.
+      size_t nfrags = frame->frag_offsets_.size() / 2;
+      size_t length = 0;
+      // calculate entire length
+      for (size_t i = 0; i < nfrags; i++) {
+        length += frame->frag_offsets_[i * 2 + 1] - frame->frag_offsets_[i * 2];
+      }
+      // assemble splited data
+      Buffer<uint8_t> data(length);
+      uint8_t *p;
+      uint8_t *q = data.data;
+      for (size_t i = 0; i < nfrags; i++) {
+        size_t frag_startpos = frame->frag_offsets_[i * 2];
+        size_t frag_length = frame->frag_offsets_[i * 2 + 1] - frag_startpos;
+        p = (uint8_t *)(is_.get()->get_pointer(frag_startpos, frag_length));
+        ::memcpy(q, p, frag_length);
+        q += frag_length;
+      }
+      return data;
     }
-    // assemble splited data
-    Buffer<uint8_t> data(length);
-    uint8_t *p;
-    uint8_t *q = data.data;
-    for (size_t i = 0; i < nfrags; i++) {
-      size_t frag_startpos = frame->frag_offsets_[i * 2];
-      size_t frag_length = frame->frag_offsets_[i * 2 + 1] - frag_startpos;
-      p = (uint8_t *)(is_.get()->get_pointer(frag_startpos, frag_length));
-      ::memcpy(q, p, frag_length);
-      q += frag_length;
-    }
-    return data;
   }
+}
+
+void PixelSequence::setEncodedFrameData(size_t index, uint8_t *data,
+                                        size_t datasize) {
+  if (index >= frames_.size())
+    LOGERROR_AND_THROW(
+        "PixelSequence::copyDecodedFrameData - index '%d' is out of "
+        "range(0..%d)",
+        index, (long)frames_.size() - 1);
+
+  frames_[index].get()->setEncodedData(data, datasize);
 }
 
 void PixelSequence::copyDecodedFrameData(size_t index, uint8_t *data,
@@ -304,7 +358,7 @@ void PixelSequence::copyDecodedFrameData(size_t index, uint8_t *data,
         index, (long)frames_.size() - 1);
 
   // get encoded data
-  Buffer<uint8_t> encdata = frameEncodedData(index);
+  Buffer<uint8_t> encdata = encodedFrameData(index);
 
   // start decompress
   imagecontainer ic;

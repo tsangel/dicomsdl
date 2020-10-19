@@ -747,12 +747,6 @@ std::wstring DataElement::repr(size_t max_length)
     case VR::PIXSEQ: {
       oss << L"PIXEL SEQUENCE WITH " << toPixelSequence()->numberOfFrames()
           << L" FRAME(S)";
-      auto offset_table = toPixelSequence()->offset_table();
-      if (offset_table.size() > 0)
-        oss << L" WITH BASIC OFFSET TABLE OF "
-            << offset_table.size() << L" ITEM(S)";
-      else
-        oss << L" WITHOUT BASIC OFFSET TABLE";
       reprstr = oss.str();
     } break;
 

@@ -739,7 +739,7 @@ void DataSet::load(tag_t load_until, InStream *instream) {
         pixseq->attachToInstream(instream, instream->bytes_remaining());
         size_t offset_end;
 
-        pixseq->readOffsetTable();
+        pixseq->loadFrames();
         offset_end = pixseq->instream()->tell();
         length = offset_end - offset;
         de->setLength(length);
@@ -1026,7 +1026,7 @@ void DataSet::saveToStream(std::ostream& oss) {
 
         // WRITING FRAMES
         for (size_t idx = 0; idx < pixseq->numberOfFrames(); idx++) {
-          Buffer<uint8_t> encdata = pixseq->frameEncodedData(idx);
+          Buffer<uint8_t> encdata = pixseq->encodedFrameData(idx);
           const char *data = (const char *)encdata.data;
           size_t bytesremaining = encdata.size;
 

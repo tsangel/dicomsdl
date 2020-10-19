@@ -342,9 +342,9 @@ PYBIND11_MODULE(_dicomsdl, m) {
   py::class_<PixelSequence>(m, "PixelSequence")
       .def("__len__", &PixelSequence::numberOfFrames)
       .def("numberOfFrames", &PixelSequence::numberOfFrames)
-      .def("frameEncodedData",
+      .def("encodedFrameData",
            [](PixelSequence &pixseq, size_t index) {
-             Buffer<uint8_t> data = pixseq.frameEncodedData(index);
+             Buffer<uint8_t> data = pixseq.encodedFrameData(index);
              return py::bytes((const char *)data.data, data.size);
            })
       .def("copyDecodedFrameData", [](PixelSequence &pixseq, size_t index,

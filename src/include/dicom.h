@@ -586,9 +586,11 @@ class PixelSequence {
   PixelSequence(const PixelSequence&) = delete;
   PixelSequence(const PixelSequence&&) = delete;
 
+  PixelFrame* addPixelFrame();
+
   void attachToInstream(InStream* basestream, size_t size);
 
-  void readOffsetTable();
+  void loadFrames();
   // offset_table_ may not exists if pixel sequence has no 'Basic Offset Table'.
   inline std::vector<size_t> offset_table() const { return offset_table_; }
 
@@ -611,7 +613,9 @@ class PixelSequence {
   void copyDecodedFrameData(size_t index, uint8_t* data, int datasize,
                             int rowstep);
 
-  Buffer<uint8_t> frameEncodedData(size_t index);
+  void setEncodedFrameData(size_t index, uint8_t* data, size_t datasize);
+
+  Buffer<uint8_t> encodedFrameData(size_t index);
 };
 
 // load/unload codec for encoding/decoding pixels
