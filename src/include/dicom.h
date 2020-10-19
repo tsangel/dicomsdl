@@ -578,7 +578,6 @@ class PixelSequence {
   bool jpeg_transfer_syntex_;
 
   size_t base_offset_;  // base offset to calculate actual offset from offset_table
-  std::vector<size_t> offset_table_;
 
  public:
   PixelSequence(DataSet *root_dataset, tsuid_t tsuid);
@@ -591,8 +590,6 @@ class PixelSequence {
   void attachToInstream(InStream* basestream, size_t size);
 
   void loadFrames();
-  // offset_table_ may not exists if pixel sequence has no 'Basic Offset Table'.
-  inline std::vector<size_t> offset_table() const { return offset_table_; }
 
   inline decltype(frames_)::iterator begin() { return frames_.begin(); }
   inline decltype(frames_)::iterator end() { return frames_.end(); }
