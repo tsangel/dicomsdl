@@ -1016,7 +1016,6 @@ void DataSet::saveToStream(std::ostream& oss) {
             store_e<uint32_t>(buf16_, offset, little_endian);
             oss.write((const char*)buf16_, 4);
             size_t framesize = pixseq->encodedFrameDataSize(idx);
-            assert ((framesize & 1) == 0);  // length should be even
             size_t nfrags = framesize / fragment_size;
             if (nfrags * fragment_size < framesize) nfrags += 1;
             framesize += nfrags * 8;  // Item Tag = 4B, Item Length = 4B

@@ -67,15 +67,21 @@ void PixelFrame::setEncodedData(uint8_t *data, size_t size)
     encoded_data_size_ = 0;
   }
 
-  encoded_data_ = (uint8_t *)::malloc(size);
+  encoded_data_size_ = size;
+  if (size & 1)
+    encoded_data_size_ += 1;
+
+  encoded_data_ = (uint8_t *)::malloc(encoded_data_size_);
   if (!encoded_data_) {
+    encoded_data_size_ = 0;
     LOGERROR_AND_THROW(
         "PixelFrame::setEncodedData(uint8_t*, size_t) - "
         "cannot allocate %zd bytes for the encoded_data_.",
         size);
   }
-  encoded_data_size_ = size;
-  ::memcpy(encoded_data_, data, size);
+  
+  encoded_data_[size] = 0x0;  // padding 0x00 to make length even
+  ::memcpy(encoded_data_, data, size);    
 }
 
 void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
@@ -283,8 +289,7 @@ size_t PixelSequence::encodedFrameDataSize(size_t index) {
         "range(0..%d)",
         index, (long)frames_.size() - 1)
 
-  PixelFrame *frame = frames_[index].get();
-  return frame->encodedDataSize();
+  return frames_[index].get()->encodedDataSize();
 }
 
 std::vector<size_t> PixelSequence::frameFragmentOffsets(size_t index) {
