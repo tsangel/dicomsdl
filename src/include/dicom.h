@@ -600,7 +600,6 @@ class PixelSequence {
   // return start and end offset of `frame` with `index`
   size_t frameOffset(size_t index, size_t& end_offset);
 
-
   // return start and end offset of `fragments` in the `frame`.
   // [start] [end] [start] [end] ...
   // returned vector size is 2 * number of fragments.

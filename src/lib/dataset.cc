@@ -1015,7 +1015,7 @@ void DataSet::saveToStream(std::ostream& oss) {
           for (int idx = 0; idx < pixseq->numberOfFrames(); idx++) {
             store_e<uint32_t>(buf16_, offset, little_endian);
             oss.write((const char*)buf16_, 4);
-            size_t framesize = pixseq->frameEncodedDataLength(idx);
+            size_t framesize = pixseq->encodedFrameDataSize(idx);
             assert ((framesize & 1) == 0);  // length should be even
             size_t nfrags = framesize / fragment_size;
             if (nfrags * fragment_size < framesize) nfrags += 1;
@@ -1383,7 +1383,7 @@ std::wstring DataSet::dump(size_t max_length) {
           swprintf(
               buf, 1023,
               L"\t\tFRAME #%zu (%zu BYTES) WITH %zu FRAGMENTS {%#zx - %#zx}\n",
-              frame_index + 1, pixseq->frameEncodedDataLength(frame_index),
+              frame_index + 1, pixseq->encodedFrameDataSize(frame_index),
               nfrags / 2, start, end);
           wss << buf;
           for (size_t frag_index = 0; frag_index < nfrags / 2; frag_index++) {

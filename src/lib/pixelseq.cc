@@ -276,10 +276,10 @@ size_t PixelSequence::frameOffset(size_t index, size_t &end_offset) {
   return frames_[index].get()->startoffset_;
 }
 
-size_t PixelSequence::frameEncodedDataLength(size_t index) {
+size_t PixelSequence::encodedFrameDataSize(size_t index) {
   if (index >= frames_.size())
     LOGERROR_AND_THROW(
-        "PixelSequence::frameEncodedDataLength - index '%d' is out of "
+        "PixelSequence::encodedFrameDataSize - index '%d' is out of "
         "range(0..%d)",
         index, (long)frames_.size() - 1)
 
