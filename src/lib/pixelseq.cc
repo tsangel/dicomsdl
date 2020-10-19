@@ -80,8 +80,9 @@ void PixelFrame::setEncodedData(uint8_t *data, size_t size)
         size);
   }
   
-  encoded_data_[size] = 0x0;  // padding 0x00 to make length even
   ::memcpy(encoded_data_, data, size);    
+  if (size & 1)
+    encoded_data_[size] = 0x0;  // padding 0x00 to make length even
 }
 
 void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
