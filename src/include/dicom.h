@@ -600,8 +600,6 @@ class PixelSequence {
   // return start and end offset of `frame` with `index`
   size_t frameOffset(size_t index, size_t& end_offset);
 
-  // return length of frame's data
-  size_t frameEncodedDataLength(size_t index);
 
   // return start and end offset of `fragments` in the `frame`.
   // [start] [end] [start] [end] ...
@@ -613,6 +611,7 @@ class PixelSequence {
   void setEncodedFrameData(size_t index, uint8_t* data, size_t datasize);
 
   Buffer<uint8_t> encodedFrameData(size_t index);
+  size_t encodedFrameDataSize(size_t index);
 };
 
 // load/unload codec for encoding/decoding pixels
