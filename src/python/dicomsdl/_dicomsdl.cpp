@@ -16,6 +16,7 @@ namespace py = pybind11;
 using namespace pybind11::literals;
 
 #include "dicom.h"
+#include "_dicomsdl.h"
 using namespace dicom;
 
 
@@ -24,55 +25,6 @@ struct Iterator {
   typename T::iterator it, end;
   bool first_or_done;
 };
-
-py::object dataelement_value(DataElement &de) {
-  py::object o;
-  switch (de.vr()) {
-    case VR::SS:
-    case VR::US:
-    case VR::SL:
-    case VR::UL:
-    case VR::SV:
-    case VR::UV:
-    case VR::IS:
-      if (de.vm() > 1)
-        o = py::list(py::cast(de.toLongLongVector()));
-      else
-        o = py::cast(de.toLongLong());
-      break;
-    case VR::FL:
-    case VR::FD:
-    case VR::DS:
-      if (de.vm() > 1)
-        o = py::list(py::cast(de.toDoubleVector()));
-      else
-        o = py::cast(de.toDouble());
-      break;
-    case VR::AE:
-    case VR::AS:
-    case VR::CS:
-    case VR::DA:
-    case VR::DT:
-    case VR::TM:
-    case VR::UI:
-    case VR::UR:
-    case VR::LO:
-    case VR::LT:
-    case VR::PN:
-    case VR::SH:
-    case VR::ST:
-    case VR::UC:
-    case VR::UT:
-      if (de.vm() > 1)
-        o = py::cast(de.toStringVector());
-      else
-        o = py::cast(de.toString());
-      break;
-    default:
-      o = py::bytes(de.toBytes());
-  }
-  return o;
-}
 
 PYBIND11_MODULE(_dicomsdl, m) {
   m.attr("version") = py::cast(DICOMSDL_VERSION);
@@ -143,6 +95,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .value("UNKNOWN", VR::UNKNOWN)
       .export_values()
       .def("__str__", [](const VR::type vr) { return VR::repr(vr); });
+  vr.def_static("from_string", &VR::from_string);
 
   py::class_<UID> uid(m, "UID");
   py::enum_<UID::type>(uid, "type")
@@ -413,7 +366,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("toDoubleVector", &DataElement::toDoubleVector)
       .def("toString", &DataElement::toString, "default_value"_a = L"")
       .def("toStringVector", &DataElement::toStringVector)
-      .def("value", &dataelement_value)
+      .def("value", &_DataElement_value)
       .def("fromLong", &DataElement::fromLong)
       .def("fromLongLong", &DataElement::fromLongLong)
       .def("fromLongVector", &DataElement::fromLongVector)
@@ -424,7 +377,9 @@ PYBIND11_MODULE(_dicomsdl, m) {
                              DataElement::fromString)
       .def("fromStringVector", &DataElement::fromStringVector)
       .def("fromBytes", (void (DataElement::*)(const std::string &)) &
-                            DataElement::fromBytes);
+                            DataElement::fromBytes)
+      .def("setValue", &_DataElement_setValue);
+
 
   // class DataSet -------------------------------------------------------------
 
@@ -584,7 +539,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
                  throw std::runtime_error("tag should be int or str.");
                }
                if (de->isValid())
-                 values.append(dataelement_value(*de));
+                 values.append(_DataElement_value(*de));
                else
                  values.append(py::cast<py::none>(Py_None));
              }

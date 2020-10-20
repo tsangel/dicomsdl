@@ -20,7 +20,7 @@ set(DEPS
 )
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/ext/pybind11 build)
-pybind11_add_module(_dicomsdl _dicomsdl.cpp)
+pybind11_add_module(_dicomsdl _dicomsdl.cpp _dataset.cpp)
 pybind11_add_module(_util _util.cpp)
 target_link_libraries(_dicomsdl PRIVATE ${DICOMSDL_LIBRARIES})
 target_link_libraries(_util PRIVATE ${DICOMSDL_LIBRARIES})

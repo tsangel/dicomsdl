@@ -310,6 +310,14 @@ const char* VR::repr(vr_t vr) {
   return "UNKNOWN";
 }
 
+
+vr_t VR::from_string(const char *s) {
+  if (!s || strlen(s) < 2)
+    return VR::NONE;
+
+  return from_uint16le(s[0] + s[1]*256);
+}
+
 vr_t VR::from_uint16le(uint16_t u)
 {
   vr_t vr;

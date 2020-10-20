@@ -57,6 +57,7 @@ PIXSEQ,
 
   static const char* repr(type vr);
   static type from_uint16le(uint16_t u);
+  static type from_string(const char *s);
 };
 typedef VR::type vr_t;
 
@@ -635,6 +636,12 @@ DicomException build_exception(const char* m, ...);
     LOG_ERROR(__VA_ARGS__);     \
     throw EXCEPTION(__VA_ARGS__) \
   } while (0);
+
+#define THROW_ERROR(...)     \
+  do {                          \
+    throw EXCEPTION(__VA_ARGS__) \
+  } while (0);
+
 
 // PixelSequence ===============================================================
 
