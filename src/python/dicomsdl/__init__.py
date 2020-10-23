@@ -24,14 +24,34 @@ def __dataset__getitem__(self, tagstr):
     return de.value()
 DataSet.__getitem__ = __dataset__getitem__
 
+def __dataset__setitem__(self, tag_vr, value):
+  if isinstance(tag_vr, tuple):
+    tag, vr = tag_vr
+    if not isinstance(vr, VR.type):
+      vr = VR.from_string(vr)
+  else:
+    tag = tag_vr
+    vr = VR.NONE
+  if vr in (VR.PIXSEQ, VR.SQ):
+    raise AttributeError("Cannot set value of DataSet or Pixel Sequence")
+  self.addDataElement(tag, vr).setValue(value)
+DataSet.__setitem__ = __dataset__setitem__
 
 def __dataset__getattr__(self, key):
-      tag = TAG.from_keyword(key)
-      if tag == 0xffffffff:
-          raise AttributeError("'DataSet' object has no attribute '%s'"%(key))
-      else:
-          return __dataset__getitem__(self, key)
+    tag = TAG.from_keyword(key)
+    if tag == 0xffffffff:
+        raise AttributeError("'DataSet' object has no attribute '%s'"%(key))
+    else:
+        return __dataset__getitem__(self, key)
 DataSet.__getattr__ = __dataset__getattr__
+
+def __dataset__setattr__(self, key, value):
+    tag = TAG.from_keyword(key)
+    if tag == 0xffffffff:
+        raise AttributeError("'DataSet' object has no attribute '%s'"%(key))
+    else:
+        return __dataset__setitem__(self, key, value)
+DataSet.__setattr__ = __dataset__setattr__
 
 
 def __dataset____dir__(self):
