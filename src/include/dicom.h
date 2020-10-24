@@ -240,7 +240,7 @@ std::string convert_from_unicode(const wchar_t *inbuf, size_t inbuflen,
 template <typename T>
 struct Buffer {
   T* data;
-  size_t size;  /// number of allocated bytes for data = `size` * sizeof(T)
+  size_t size;  /// == number of items; size of allocated bytes / sizeof(T)
   bool owndata;
 
   Buffer() : data(nullptr), size(0), owndata(false) {}
@@ -260,10 +260,19 @@ struct Buffer {
   }
   Buffer& operator=(Buffer&&) = delete;
 
+  T& operator[](size_t idx) { return data[idx]; }
+
+  void set(T* buf, size_t buflen);
   T* alloc(size_t n);
   T* realloc(size_t n);
   void free();
 };
+
+template <typename T>
+void Buffer<T>::set(T* buf, size_t buflen) {
+  data = buf;
+  size = buflen;
+}
 
 template <typename T>
 T* Buffer<T>::alloc(size_t n) {
@@ -278,6 +287,7 @@ T* Buffer<T>::alloc(size_t n) {
     return nullptr;
   }
 }
+
 template <typename T>
 T* Buffer<T>::realloc(size_t n) {
   if (owndata) {
@@ -356,12 +366,17 @@ class DataElement {
   inline PixelSequence* toPixelSequence() {
     return (vr_ == VR::PIXSEQ ? pixseq_ : nullptr);
   }
-  inline void* pointer() { return ptr_; }
 
+  /// Return memory pointer where DataElement's raw value is stored. It can be
+  /// on the mmap'ed disk or allocated memory.
   void* value_ptr();
 
-  // set value functions
+  /// Return Buffer<T> which contains DataElement's value. Byte order swapping
+  /// is done according to the machines endianess, transfer syntax, and VR.
+  template <typename T>
+  Buffer<T> toBuffer();
 
+  // set value functions
   void fromLong(const long value);
   void fromLongLong(const long long value);
   void fromLongVector(const std::vector<long>& value);
@@ -380,51 +395,51 @@ class DataElement {
 
   inline size_t length() const {  // wrapper
     return length_;
-    }
+  }
 
-    inline vr_t vr() const {  // wrapper
-      return vr_;
-    }
+  inline vr_t vr() const {  // wrapper
+    return vr_;
+  }
 
-    inline tag_t tag() const {  // wrapper
-      return tag_;
-    }
+  inline tag_t tag() const {  // wrapper
+    return tag_;
+  }
 
-    inline size_t offset() const {  // wrapper
-      return offset_;
-    }
+  inline size_t offset() const {  // wrapper
+    return offset_;
+  }
 
-    int vm();
+  int vm();
 
-    static DataElement* NullElement() {
-      static DataElement null(0x0, VR::NONE, 0, 0, nullptr);
-      return &null;
-    }
+  static DataElement* NullElement() {
+    static DataElement null(0x0, VR::NONE, 0, 0, nullptr);
+    return &null;
+  }
 
-    inline bool isValid() const { return vr_ != VR::NONE; }
+  inline bool isValid() const { return vr_ != VR::NONE; }
 
-    // setter functions
-    // ----------------------------------------------------------
+  // setter functions
+  // ----------------------------------------------------------
 
-    inline void setOffset(size_t offset) { offset_ = offset; }
-    inline void setLength(size_t length) { length_ = length; }
+  inline void setOffset(size_t offset) { offset_ = offset; }
+  inline void setLength(size_t length) { length_ = length; }
 
-   private:
-    // Allocate size bytes memory to `ptr_`. `_free_ptr()` set `ptr_` to
-    // `nullptr` if size is zero. `length_` is set to size. `size` should be
-    // even.
-    void alloc_ptr_(size_t size);
-    // Free memory if `ptr_` is not null. `ptr_` is set to `nullptr`.
-    void _free_ptr();
+ private:
+  // Allocate size bytes memory to `ptr_`. `_free_ptr()` set `ptr_` to
+  // `nullptr` if size is zero. `length_` is set to size. `size` should be
+  // even.
+  void alloc_ptr_(size_t size);
+  // Free memory if `ptr_` is not null. `ptr_` is set to `nullptr`.
+  void _free_ptr();
 
-    template <typename AVT>
-    bool _fromNumberVector(const std::vector<AVT> &value);
-    template <typename AVT, typename SVT>
-    void _fromNumberVectorToBytes(const std::vector<AVT>& value);
-    template <typename AVT>
-    void _fromNumberVectorToAttrTags(const std::vector<AVT>& value);
-    template <typename AVT, typename SVT>
-    void _fromNumberVectorToString(const std::vector<AVT>& value);
+  template <typename AVT>
+  bool _fromNumberVector(const std::vector<AVT>& value);
+  template <typename AVT, typename SVT>
+  void _fromNumberVectorToBytes(const std::vector<AVT>& value);
+  template <typename AVT>
+  void _fromNumberVectorToAttrTags(const std::vector<AVT>& value);
+  template <typename AVT, typename SVT>
+  void _fromNumberVectorToString(const std::vector<AVT>& value);
 };
 
 // DataSet =====================================================================

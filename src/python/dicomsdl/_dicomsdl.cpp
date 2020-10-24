@@ -348,7 +348,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
            py::return_value_policy::reference_internal)
       .def("toPixelSequence", &DataElement::toPixelSequence,
            py::return_value_policy::reference_internal)
-      .def("pointer", &DataElement::pointer,
+      .def("value_ptr", &DataElement::value_ptr,
            py::return_value_policy::reference_internal)
       .def("repr", &DataElement::repr, "max_length"_a = 80)
       .def(

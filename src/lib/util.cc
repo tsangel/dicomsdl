@@ -96,7 +96,7 @@ void copyswap4(uint8_t *dst, uint8_t *src, size_t size) {
     src += 4;
     dst += 4;
   }
-  n = size % 2;
+  n = size % 4;
   while (n--)
     *src++ = *dst++;
 }
@@ -115,7 +115,7 @@ void copyswap8(uint8_t *dst, uint8_t *src, size_t size) {
     src += 8;
     dst += 8;
   }
-  n = size % 2;
+  n = size % 8;
   while (n--)
     *src++ = *dst++;
 }
