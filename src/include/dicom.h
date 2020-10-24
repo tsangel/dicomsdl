@@ -497,8 +497,17 @@ class DataSet {
 
   inline bool is_little_endian() const { return is_little_endian_; }
   inline bool is_vr_explicit() const { return is_vr_explicit_; }
-  inline tsuid_t transfer_syntax() const { return transfer_syntax_; }
-  charset_t getSpecificCharset(int index=0);
+  inline bool isExplicitVr() const {
+    return transfer_syntax_ != UID::IMPLICIT_VR_LITTLE_ENDIAN;
+  }
+  inline bool isLittleEndian() const {
+    return transfer_syntax_ != UID::EXPLICIT_VR_BIG_ENDIAN;
+  }
+  inline tsuid_t getTransferSyntax() const {
+    return (this == root_dataset_ ? transfer_syntax_
+                                  : root_dataset_->transfer_syntax_);
+  }
+  charset_t getSpecificCharset(int index = 0);
   void setSpecificCharset(charset_t charset);
 
   // get/set offset in the file (for DICOMDIR)

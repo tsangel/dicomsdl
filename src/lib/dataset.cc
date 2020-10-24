@@ -39,10 +39,10 @@ DataSet::DataSet()
 
 DataSet::DataSet(DataSet* parent)
     : root_dataset_(parent),
-      transfer_syntax_(parent->transfer_syntax()),
-      is_little_endian_(parent->transfer_syntax() !=
+      transfer_syntax_(parent->getTransferSyntax()),
+      is_little_endian_(parent->getTransferSyntax() !=
                         UID::EXPLICIT_VR_BIG_ENDIAN),
-      is_vr_explicit_(parent->transfer_syntax() !=
+      is_vr_explicit_(parent->getTransferSyntax() !=
                       UID::IMPLICIT_VR_LITTLE_ENDIAN) {
   last_tag_loaded_ = 0x0;
   UINT64(buf8_) = 0;

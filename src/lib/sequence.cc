@@ -17,7 +17,7 @@ Sequence::Sequence(DataSet *root_dataset): root_dataset_(root_dataset)
 {
   LOG_DEBUG("++ @%p\tSequence::Sequence(DataSet *)", this);
 
-  transfer_syntax_ = root_dataset_->transfer_syntax();
+  transfer_syntax_ = root_dataset_->getTransferSyntax();
   is_little_endian_ = root_dataset_->is_little_endian();
   is_vr_explicit_ = root_dataset_->is_vr_explicit();
 }

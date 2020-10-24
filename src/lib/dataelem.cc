@@ -60,7 +60,7 @@ DataElement::DataElement(tag_t tag, vr_t vr, size_t length, size_t offset, DataS
   if (vr_ == VR::SQ) {
     seq_ = new Sequence(parent_);
   } else if (vr_ == VR::PIXSEQ) {
-    tsuid_t tsuid = parent->transfer_syntax();
+    tsuid_t tsuid = parent->getTransferSyntax();
     pixseq_ = new PixelSequence(parent_, tsuid);
   } else {
     ptr_ = nullptr;

@@ -394,7 +394,7 @@ void PixelSequence::copyDecodedFrameData(size_t index, uint8_t *data,
   ic.data = (char *)data;
 
   DICOMSDL_CODEC_RESULT codec_result =
-      decode_pixeldata(UID::to_uidvalue(root_dataset_->transfer_syntax()),
+      decode_pixeldata(UID::to_uidvalue(root_dataset_->getTransferSyntax()),
                        (char *)encdata.data, encdata.size, &ic);
   if (codec_result == DICOMSDL_CODEC_ERROR) {
     LOGERROR_AND_THROW(

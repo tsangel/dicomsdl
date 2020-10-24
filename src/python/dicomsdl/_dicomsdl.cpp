@@ -432,6 +432,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("saveToMemory",
            [](DataSet &ds) { return py::bytes(ds.saveToMemory()); })
       .def("close", &DataSet::close)
+      .def("getTransferSyntax", &DataSet::getTransferSyntax)
       .def(
           "__iter__",
           [](DataSet &ds) {
@@ -523,6 +524,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
                }
              }
            })
+           
       .def("getValues",
            [](DataSet &ds, py::list tags) {
              auto values = py::list();
