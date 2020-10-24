@@ -138,7 +138,7 @@ long DataElement::toLong(long default_value) {
       value = length_ >= 8 ? toBuffer<uint64_t>()[0] : default_value;
       break;
     case VR::IS: 
-      if (length_ == 0)
+      if (!value_ptr())
         value = default_value;
       else {
         std::string s((const char*) (value_ptr()), length_);
@@ -146,7 +146,11 @@ long DataElement::toLong(long default_value) {
       }
       break;
     default:
-      value = default_value;
+      LOGERROR_AND_THROW(
+          "DataElement::toLong - "
+          "Value of a DataElement %s, VR %s cannot be convert "
+          "to a long value.",
+          TAG::repr(tag_).c_str(), VR::repr(vr_));
       break;
   }
 
@@ -186,7 +190,7 @@ long long DataElement::toLongLong(long long default_value) {
       value = length_ >= 8 ? toBuffer<uint64_t>()[0] : default_value;
       break;
     case VR::IS: 
-      if (length_ == 0)
+      if (!value_ptr())
         value = default_value;
       else {
         std::string s((const char*) (value_ptr()), length_);
@@ -194,80 +198,62 @@ long long DataElement::toLongLong(long long default_value) {
       }
       break;
     default:
-      value = default_value;
+      LOGERROR_AND_THROW(
+          "DataElement::toLongLong - "
+          "Value of a DataElement %s, VR %s cannot be convert "
+          "to a long long value.",
+          TAG::repr(tag_).c_str(), VR::repr(vr_));
       break;
   }
 
   return value;
 }
 
-#define PUSHBACK(TYPE)                                  \
-  {                                                     \
-    nvalues = length_ / sizeof(TYPE);                   \
-    vec.reserve(nvalues);                                \
-    if (is_little_endian) {                             \
-      for (int i = 0; i < nvalues; i++) {               \
-        vec.push_back(load_le<TYPE>(((TYPE *)ptr) + i)); \
-      }                                                 \
-    } else {                                            \
-      for (int i = 0; i < nvalues; i++) {               \
-        vec.push_back(load_be<TYPE>(((TYPE *)ptr) + i)); \
-      }                                                 \
-    }                                                   \
+#define __BUFFER_TO_VECTOR__(T)                               \
+  {                                                           \
+    Buffer<T> buf = toBuffer<T>();                            \
+    vec.reserve(buf.size);                                    \
+    for (size_t i = 0; i < buf.size; i++) vec.push_back(buf[i]); \
   }
-
 
 std::vector<long> DataElement::toLongVector() {
   std::vector<long> vec;
   if (!isValid() || length_ == 0) return vec;
 
-  void *ptr = value_ptr();
-  if (ptr == nullptr) return vec;
-  int nvalues;
-
-  bool is_little_endian =
-      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
-
   switch (vr_) {
     case VR::SS:
-      PUSHBACK(int16_t)
+      __BUFFER_TO_VECTOR__(int16_t)
       break;
     case VR::US:
     case VR::OW:
-      PUSHBACK(uint16_t)
+      __BUFFER_TO_VECTOR__(uint16_t)
       break;
     case VR::SL:
-      PUSHBACK(int32_t)
+      __BUFFER_TO_VECTOR__(int32_t)
       break;
     case VR::UL:
     case VR::OL:
-      PUSHBACK(uint32_t)
+      __BUFFER_TO_VECTOR__(uint32_t)
       break;
-    case VR::AT:
-      PUSHBACK(uint32_t)
-      // switch high and lower word
-      {
-        if (is_little_endian) {
-          for (int i = 0; i < nvalues; i++) {
-            uint16_t hi = vec[i] >> 16;
-            uint16_t lo = vec[i] & 0xffff;
-            vec[i] = hi + (lo << 16);
-          }
-        }
-      }
-      break;
+    case VR::AT: {
+      Buffer<uint16_t> buf = toBuffer<uint16_t>();
+      size_t cnt = buf.size / 2;
+      vec.reserve(cnt);
+      for (size_t i = 0; i < cnt; i++)
+        vec.push_back(tag_t(buf[i * 2]) * 0x10000 + buf[i * 2 + 1]);
+    } break;
     case VR::SV:
-      PUSHBACK(uint64_t)
+      __BUFFER_TO_VECTOR__(int64_t)
       break;
     case VR::UV:
     case VR::OV:
-      PUSHBACK(uint64_t)
+      __BUFFER_TO_VECTOR__(uint64_t)
       break;
     case VR::IS: {
       char *startp, *p, *nextp;
-      startp = p = (char *)(ptr);
-      nextp = NULL;
       long value;
+      startp = p = (char *)(value_ptr()); // value_ptr should be valid...
+      nextp = NULL;
       while (1) {
         value = strtol(p, &nextp, 10);
         if (value == 0 && errno == EINVAL) break;  // no conversion is performed
@@ -286,57 +272,45 @@ std::vector<long> DataElement::toLongVector() {
   }
   return vec;
 }
+
 std::vector<long long> DataElement::toLongLongVector() {
   std::vector<long long> vec;
   if (!isValid() || length_ == 0) return vec;
 
-  void *ptr = value_ptr();
-  if (ptr == nullptr) return vec;
-  int nvalues;
-
-  bool is_little_endian =
-      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
-
   switch (vr_) {
     case VR::SS:
-      PUSHBACK(int16_t)
+      __BUFFER_TO_VECTOR__(int16_t)
       break;
     case VR::US:
     case VR::OW:
-      PUSHBACK(uint16_t)
+      __BUFFER_TO_VECTOR__(uint16_t)
       break;
     case VR::SL:
-      PUSHBACK(int32_t)
+      __BUFFER_TO_VECTOR__(int32_t)
       break;
     case VR::UL:
     case VR::OL:
-      PUSHBACK(uint32_t)
+      __BUFFER_TO_VECTOR__(uint32_t)
       break;
-    case VR::AT:
-      PUSHBACK(uint32_t)
-      // switch high and lower word
-      {
-        if (is_little_endian) {
-          for (int i = 0; i < nvalues; i++) {
-            uint16_t hi = vec[i] >> 16;
-            uint16_t lo = vec[i] & 0xffff;
-            vec[i] = hi + (lo << 16);
-          }
-        }
-      }
-      break;      
+    case VR::AT: {
+      Buffer<uint16_t> buf = toBuffer<uint16_t>();
+      size_t cnt = buf.size / 2;
+      vec.reserve(cnt);
+      for (size_t i = 0; i < cnt; i++)
+        vec.push_back(tag_t(buf[i * 2]) * 0x10000 + buf[i * 2 + 1]);
+    } break;
     case VR::SV:
-      PUSHBACK(uint64_t)
+      __BUFFER_TO_VECTOR__(int64_t)
       break;
     case VR::UV:
     case VR::OV:
-      PUSHBACK(uint64_t)
+      __BUFFER_TO_VECTOR__(uint64_t)
       break;
     case VR::IS: {
       char *startp, *p, *nextp;
-      startp = p = (char *)(ptr);
-      nextp = NULL;
       long long value;
+      startp = p = (char *)(value_ptr()); // value_ptr should be valid...
+      nextp = NULL;
       while (1) {
         value = strtoll(p, &nextp, 10);
         if (value == 0 && errno == EINVAL) break;  // no conversion is performed
@@ -359,32 +333,22 @@ std::vector<long long> DataElement::toLongLongVector() {
 double DataElement::toDouble(double default_value) {
   if (!isValid() || length_ == 0) return default_value;
 
-  void *ptr = value_ptr();
-  if (ptr == nullptr) return default_value;
-
   double value;
-
-  bool is_little_endian =
-      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::FL:
     case VR::OF:
-      value = (length_ >= 4
-                   ? (is_little_endian ? load_le<float32_t>(ptr) : load_be<float32_t>(ptr))
-                   : default_value);
+      value = length_ >= 2 ? toBuffer<float32_t>()[0] : default_value;
       break;
     case VR::FD:
     case VR::OD:
-      value = (length_ >= 8
-                   ? (is_little_endian ? load_le<float64_t>(ptr) : load_be<float64_t>(ptr))
-                   : default_value);
+      value = length_ >= 2 ? toBuffer<float32_t>()[0] : default_value;
       break;
     case VR::DS:
-      if (length_ == 0)
+      if (!value_ptr())
         value = default_value;
       else {
-        std::string s((const char*) (ptr), length_);
+        std::string s((const char*) (value_ptr()), length_);
         return atof(s.c_str());
       }
       break;
@@ -399,13 +363,17 @@ double DataElement::toDouble(double default_value) {
     case VR::UV:
     case VR::OV:
     case VR::IS:
-      value = (double) toLongLong((int) default_value);
+      value = (double)toLongLong((long long)default_value);
       break;
 
     default:
-      value = default_value;
+      LOGERROR_AND_THROW("DataElement::toDouble",
+                         "Value of a DataElement %s, VR %s cannot be convert "
+                         "to a double value.",
+                         TAG::repr(tag_).c_str(), VR::repr(vr_));
       break;
   }
+
   return value;
 }
 
@@ -413,28 +381,21 @@ std::vector<double> DataElement::toDoubleVector() {
   std::vector<double> vec;
   if (!isValid() || length_ == 0) return vec;
 
-  void *ptr = value_ptr();
-  if (ptr == nullptr) return vec;
-  int nvalues;
-
-  bool is_little_endian =
-      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
-
   switch (vr_) {
     case VR::FL:
     case VR::OF:
-      PUSHBACK(float32_t)
+      __BUFFER_TO_VECTOR__(float32_t)
       break;
     case VR::FD:
     case VR::OD:
-      PUSHBACK(float64_t)
+      __BUFFER_TO_VECTOR__(float64_t)
       break;
-
     case VR::DS: {
       char *startp, *p, *nextp;
-      startp = p = (char *)(ptr);
-      nextp = NULL;
       double value;
+      startp = p = (char *)(value_ptr()); // value_ptr should be valid...
+      nextp = NULL;
+
       while (1) {
         value = strtod(p, &nextp);
         if (p == nextp) break;  // no conversion is performed
