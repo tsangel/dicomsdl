@@ -156,61 +156,41 @@ long DataElement::toLong(long default_value) {
 long long DataElement::toLongLong(long long default_value) {
   if (!isValid() || length_ == 0) return default_value;
 
-  void *ptr = value_ptr();
-  if (ptr == nullptr) return default_value;
-
   long long value;
-
-  bool is_little_endian =
-      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::SS:
-      value = (length_ >= 2
-                   ? (is_little_endian ? load_le<int16_t>(ptr) : load_be<int16_t>(ptr))
-                   : default_value);
+      value = length_ >= 2 ? toBuffer<int16_t>()[0] : default_value;
       break;
     case VR::US:
-      value = (length_ >= 2
-                   ? (is_little_endian ? load_le<uint16_t>(ptr) : load_be<uint16_t>(ptr))
-                   : default_value);
+      value = length_ >= 2 ? toBuffer<uint16_t>()[0] : default_value;
       break;
     case VR::SL:
-      value = (length_ >= 4
-                   ? (is_little_endian ? load_le<int32_t>(ptr) : load_be<int32_t>(ptr))
-                   : default_value);
+      value = length_ >= 4 ? toBuffer<int32_t>()[0] : default_value;
       break;
     case VR::UL:
-      value = (length_ >= 4
-                   ? (is_little_endian ? load_le<uint32_t>(ptr) : load_be<uint32_t>(ptr))
-                   : default_value);
+      value = length_ >= 4 ? toBuffer<uint32_t>()[0] : default_value;
       break;
     case VR::AT:
-      value = (length_ >= 4 ? (is_little_endian ? load_le<uint32_t>(ptr)
-                                                : load_be<uint32_t>(ptr))
-                            : default_value);
-      if (is_little_endian) {
-        uint16_t hi = value >> 16;
-        uint16_t lo = value & 0xffff;
-        value = hi + (lo << 16);
+      if (length_ <= 4)
+        value = default_value;
+      else {
+        Buffer<uint16_t> buf = toBuffer<uint16_t>();
+        value = ((tag_t)(buf[0]) << 16) + buf[1];
       }
       break;
     case VR::SV:
-      value = (length_ >= 8
-                   ? (is_little_endian ? load_le<int64_t>(ptr) : load_be<int64_t>(ptr))
-                   : default_value);
+      value = length_ >= 8 ? toBuffer<int64_t>()[0] : default_value;
       break;
     case VR::UV:
-      value = (length_ >= 8
-                   ? (is_little_endian ? load_le<uint64_t>(ptr) : load_be<uint64_t>(ptr))
-                   : default_value);
+      value = length_ >= 8 ? toBuffer<uint64_t>()[0] : default_value;
       break;
-    case VR::IS:
+    case VR::IS: 
       if (length_ == 0)
         value = default_value;
       else {
-        std::string s((const char*) (ptr), length_);
-        value = strtoll(s.c_str(), NULL, 10);
+        std::string s((const char*) (value_ptr()), length_);
+        value = strtol(s.c_str(), NULL, 10);
       }
       break;
     default:
@@ -220,8 +200,6 @@ long long DataElement::toLongLong(long long default_value) {
 
   return value;
 }
-
-
 
 #define PUSHBACK(TYPE)                                  \
   {                                                     \
