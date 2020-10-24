@@ -439,8 +439,6 @@ class DataSet {
   uint8_t buf8_[8];  // temporary buffer for tag, vr and length
 
   tsuid_t transfer_syntax_;
-  bool is_little_endian_;
-  bool is_vr_explicit_;
 
   // first character set for convert_to_unicode argument
   charset_t specific_charset0_;
@@ -495,8 +493,6 @@ class DataSet {
 
   inline InStream* instream() { return is_.get(); }
 
-  inline bool is_little_endian() const { return is_little_endian_; }
-  inline bool is_vr_explicit() const { return is_vr_explicit_; }
   inline bool isExplicitVr() const {
     return transfer_syntax_ != UID::IMPLICIT_VR_LITTLE_ENDIAN;
   }
@@ -545,8 +541,6 @@ class Sequence {
   DataSet* root_dataset_;
 
   tsuid_t transfer_syntax_;
-  bool is_little_endian_;
-  bool is_vr_explicit_;
 
   std::vector<std::unique_ptr<DataSet>> seq_;
 

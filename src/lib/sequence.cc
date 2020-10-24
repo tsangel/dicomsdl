@@ -18,8 +18,6 @@ Sequence::Sequence(DataSet *root_dataset): root_dataset_(root_dataset)
   LOG_DEBUG("++ @%p\tSequence::Sequence(DataSet *)", this);
 
   transfer_syntax_ = root_dataset_->getTransferSyntax();
-  is_little_endian_ = root_dataset_->is_little_endian();
-  is_vr_explicit_ = root_dataset_->is_vr_explicit();
 }
 
 Sequence::~Sequence()
@@ -51,6 +49,8 @@ void Sequence::load(InStream *instream) {
   uint8_t buf[8];
   size_t n;
 
+  bool is_little_endian = root_dataset_->isLittleEndian();
+
   while (!instream->is_eof()) {
     n = instream->read(buf, 8);
 
@@ -63,7 +63,7 @@ void Sequence::load(InStream *instream) {
     tag_t tag;
     size_t length, offset;
 
-    tag = TAG::load_32e(buf, is_little_endian_);
+    tag = TAG::load_32e(buf, is_little_endian);
 
     // Sequence Delimitation Item
     if (tag == 0xfffee0dd)  // Seq. Delim. Tag (FFFE, E0DD)
@@ -83,12 +83,12 @@ void Sequence::load(InStream *instream) {
     // PS3.3 Table F.3-3. Directory Information Module Attributes
     // This offset includes the File Preamble and the DICM Prefix.
     offset = instream->tell();
-    length = load_e<uint32_t>(buf + 4, is_little_endian_);
+    length = load_e<uint32_t>(buf + 4, is_little_endian);
 
     if (length == 0xffffffff) length = instream->bytes_remaining();
-    
-    DataSet *dataset = addDataSet();
-    if (length) {      
+
+    DataSet* dataset = addDataSet();
+    if (length) {
       dataset->attachToInstream(instream, length);
       dataset->setOffset(offset);
       InStream* subs = dataset->instream();
@@ -99,7 +99,6 @@ void Sequence::load(InStream *instream) {
       instream->skip(offset_end - offset_start);
     }
   }
-
 }
 
 }  // namespace dicom

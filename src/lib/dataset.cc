@@ -27,8 +27,6 @@ namespace dicom {
 DataSet::DataSet()
     : root_dataset_(this),
       transfer_syntax_(UID::EXPLICIT_VR_LITTLE_ENDIAN),
-      is_little_endian_(true),
-      is_vr_explicit_(true),
       specific_charset0_(CHARSET::UNKNOWN) {
   // 0xffffffff for last_tag_loaded_ will prevent getDataElement try to load()
   // from an empty DataSet.
@@ -39,11 +37,8 @@ DataSet::DataSet()
 
 DataSet::DataSet(DataSet* parent)
     : root_dataset_(parent),
-      transfer_syntax_(parent->getTransferSyntax()),
-      is_little_endian_(parent->getTransferSyntax() !=
-                        UID::EXPLICIT_VR_BIG_ENDIAN),
-      is_vr_explicit_(parent->getTransferSyntax() !=
-                      UID::IMPLICIT_VR_LITTLE_ENDIAN) {
+      transfer_syntax_(parent->getTransferSyntax())
+{
   last_tag_loaded_ = 0x0;
   UINT64(buf8_) = 0;
   specific_charset0_ = CHARSET::UNKNOWN; // use root_dataset's charset
@@ -510,6 +505,9 @@ void DataSet::load(tag_t load_until, InStream *instream) {
   vr_t vr;
   size_t length, offset;  // value's length and offset
 
+  bool is_little_endian = isLittleEndian();
+  bool is_explicit_vr = isExplicitVr();
+
   if (instream == nullptr) {
     // instream == nullptr; second call from DataSet::loadDicomFile() or calls
     // from Sequence::load()
@@ -543,7 +541,7 @@ void DataSet::load(tag_t load_until, InStream *instream) {
       }
     }
 
-    if (is_little_endian_) {
+    if (is_little_endian) {
       gggg = load_le<uint16_t>(buf8_);
       eeee = load_le<uint16_t>(buf8_ + 2);
     } else {
@@ -597,9 +595,9 @@ void DataSet::load(tag_t load_until, InStream *instream) {
     }
 
     // DATA ELEMENT STRUCTURE WITH EXPLICIT VR
-    if (is_vr_explicit_) {
+    if (is_explicit_vr) {
       vr = VR::from_uint16le(uint16_t(buf8_[4])+uint16_t(buf8_[5])*256);
-      length = load_e<uint16_t>(buf8_ + 6, is_little_endian_);
+      length = load_e<uint16_t>(buf8_ + 6, is_little_endian);
 
       switch (vr) {
         case VR::FL:
@@ -653,7 +651,7 @@ void DataSet::load(tag_t load_until, InStream *instream) {
                 "DataSet::load - cannot read 4 bytes for data element value's "
                 "length at {%x}",
                 instream->tell());
-          length = load_e<uint32_t>(buf4, is_little_endian_);
+          length = load_e<uint32_t>(buf4, is_little_endian);
           break;
 
         case VR::UT:
@@ -664,10 +662,10 @@ void DataSet::load(tag_t load_until, InStream *instream) {
                 "DataSet::load - cannot read 4 bytes for data element value's "
                 "length at {%x}",
                 instream->tell());
-          length = load_e<uint32_t>(buf4, is_little_endian_);
+          length = load_e<uint32_t>(buf4, is_little_endian);
           if (length > instream->bytes_remaining()) {
             instream->unread(4);
-            length = load_e<uint16_t>(buf8_ + 6, is_little_endian_);
+            length = load_e<uint16_t>(buf8_ + 6, is_little_endian);
           }
           break;
 
@@ -837,8 +835,8 @@ void DataSet::saveToStream(std::ostream& oss) {
   size_t fragment_size =
       (size_t)Config::getInteger("PIXEL_FRAGMENT_SIZE", 0xfffffffe);
 
-  bool little_endian = true;
-  bool vr_explicit = true;
+  bool is_little_endian = true;
+  bool is_explicit_vr = true;
 
   // for calculating group length, item value length, etc ...
   std::vector<size_t> length_marker;
@@ -879,7 +877,7 @@ void DataSet::saveToStream(std::ostream& oss) {
     size_t length = cur_pos - marker_pos;
     oss.seekp(marker_pos - 4);
     char tmp[4];
-    store_e<uint32_t>(tmp, length, little_endian);
+    store_e<uint32_t>(tmp, length, is_little_endian);
     oss.write(tmp, 4);
     oss.seekp(cur_pos);
   };
@@ -901,26 +899,26 @@ void DataSet::saveToStream(std::ostream& oss) {
       if (writing_metainfo && tag > 0x0002ffff) {
         _pop_marker();
         writing_metainfo = false;
-        little_endian = this->is_little_endian_;
-        vr_explicit = this->is_vr_explicit_;
+        is_little_endian = isLittleEndian();
+        is_explicit_vr = isExplicitVr();
       } else if (!writing_metainfo && tag < 0x0002ffff) {
         // don't write metainfo
         continue;
       }
 
-      store_e<uint16_t>(buf16_, tag >> 16, little_endian);
-      store_e<uint16_t>(buf16_ + 2, tag & 0xffff, little_endian);
+      store_e<uint16_t>(buf16_, tag >> 16, is_little_endian);
+      store_e<uint16_t>(buf16_ + 2, tag & 0xffff, is_little_endian);
 
       if (vr == VR::SQ) {
-        if (vr_explicit) {
+        if (is_explicit_vr) {
           // vr 2 bytes, 0000h
           *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
-          store_e<uint16_t>(buf16_ + 6, 0, little_endian);
+          store_e<uint16_t>(buf16_ + 6, 0, is_little_endian);
           oss.write((const char*)buf16_, 8);
         }
 
         // length 4 bytes.
-        store_e<uint32_t>(buf16_, 0xffffffff, little_endian);
+        store_e<uint32_t>(buf16_, 0xffffffff, is_little_endian);
         oss.write((const char*)buf16_, 4);
 
         if (sq_explicit_length) {
@@ -932,9 +930,9 @@ void DataSet::saveToStream(std::ostream& oss) {
           Sequence* seq = de->toSequence();
           for (int i = 0; i < seq->size(); i++) {
             // Item tag. (FFFE,E000), Item Length
-            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-            store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
-            store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+            store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe000, is_little_endian);
+            store_e<uint32_t>(buf16_ + 4, 0xffffffff, is_little_endian);
             oss.write((const char*)buf16_, 8);
 
             _push_marker();  // explicit byte length of DataSet item
@@ -953,33 +951,33 @@ void DataSet::saveToStream(std::ostream& oss) {
           Sequence* seq = de->toSequence();
           for (int i = 0; i < seq->size(); i++) {
             // Item tag. (FFFE,E000), Item Length (FFFFFFFFH)
-            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-            store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
-            store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+            store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe000, is_little_endian);
+            store_e<uint32_t>(buf16_ + 4, 0xffffffff, is_little_endian);
             oss.write((const char*)buf16_, 8);
 
             // Item Value DataSet
             _saveToStream(seq->getDataSet(i));
 
             // Item delim. tag. (FFFE,E00D), Item Length (0)
-            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-            store_e<uint16_t>(buf16_ + 2, 0xe00d, little_endian);
-            store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+            store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe00d, is_little_endian);
+            store_e<uint32_t>(buf16_ + 4, 0xffffffff, is_little_endian);
             oss.write((const char*)buf16_, 8);
           }
 
           // Seq. delim. tag. (FFFE,E0DD), Item Length (0)
-          store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-          store_e<uint16_t>(buf16_ + 2, 0xe0dd, little_endian);
-          store_e<uint32_t>(buf16_ + 4, 0xffffffff, little_endian);
+          store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+          store_e<uint16_t>(buf16_ + 2, 0xe0dd, is_little_endian);
+          store_e<uint32_t>(buf16_ + 4, 0xffffffff, is_little_endian);
           oss.write((const char*)buf16_, 8);
         }
 
       } else if (vr == VR::PIXSEQ) {
         // VR is 'OB' and lenght shall be set to FFFFFFFFH
         *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(VR::OB));  // 'OB'
-        store_e<uint16_t>(buf16_ + 6, 0, little_endian);  // 0000H
-        store_e<uint32_t>(buf16_ + 8, 0xFFFFFFFF, little_endian);
+        store_e<uint16_t>(buf16_ + 6, 0, is_little_endian);  // 0000H
+        store_e<uint32_t>(buf16_ + 8, 0xFFFFFFFF, is_little_endian);
         oss.write((const char*)buf16_, 12);
 
         // check fragment_size loaded from configuration.
@@ -994,10 +992,10 @@ void DataSet::saveToStream(std::ostream& oss) {
           // Table A.4-1. Example for Elements of an Encoded Single-Frame Image
           // Defined as a Sequence of Three Fragments Without Basic Offset
           // Item Tag (FFFE,E000)
-          store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-          store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+          store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+          store_e<uint16_t>(buf16_ + 2, 0xe000, is_little_endian);
           // Item Length 0000 0000H
-          store_e<uint32_t>(buf16_ + 4, 0x00000000, little_endian);
+          store_e<uint32_t>(buf16_ + 4, 0x00000000, is_little_endian);
           oss.write((const char*)buf16_, 8);
         } else {
           // Table A.4-2. Examples of Elements for an Encoded Two-Frame Image
@@ -1005,15 +1003,15 @@ void DataSet::saveToStream(std::ostream& oss) {
           // Values
 
           // Item Tag (FFFE,E000)
-          store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-          store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+          store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+          store_e<uint16_t>(buf16_ + 2, 0xe000, is_little_endian);
           // Item Length 4 * nframes
-          store_e<uint32_t>(buf16_ + 4, nframes * 4, little_endian);
+          store_e<uint32_t>(buf16_ + 4, nframes * 4, is_little_endian);
           oss.write((const char*)buf16_, 8);
 
           size_t offset = 0;
           for (int idx = 0; idx < pixseq->numberOfFrames(); idx++) {
-            store_e<uint32_t>(buf16_, offset, little_endian);
+            store_e<uint32_t>(buf16_, offset, is_little_endian);
             oss.write((const char*)buf16_, 4);
             size_t framesize = pixseq->encodedFrameDataSize(idx);
             size_t nfrags = framesize / fragment_size;
@@ -1038,10 +1036,10 @@ void DataSet::saveToStream(std::ostream& oss) {
             }
 
             // Item Tag (FFFE,E000)
-            store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-            store_e<uint16_t>(buf16_ + 2, 0xe000, little_endian);
+            store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+            store_e<uint16_t>(buf16_ + 2, 0xe000, is_little_endian);
             // Item Length
-            store_e<uint32_t>(buf16_ + 4, bytestowrite, little_endian);
+            store_e<uint32_t>(buf16_ + 4, bytestowrite, is_little_endian);
             oss.write((const char*)buf16_, 8);
 
             // write frame contents
@@ -1053,13 +1051,13 @@ void DataSet::saveToStream(std::ostream& oss) {
         }
 
         // Sequence Delim. Tag (FFFE,E0DD)
-        store_e<uint16_t>(buf16_, 0xfffe, little_endian);
-        store_e<uint16_t>(buf16_ + 2, 0xe0dd, little_endian);
+        store_e<uint16_t>(buf16_, 0xfffe, is_little_endian);
+        store_e<uint16_t>(buf16_ + 2, 0xe0dd, is_little_endian);
         // Item Length 0000 0000H
-        store_e<uint32_t>(buf16_ + 4, 0x00000000, little_endian);
+        store_e<uint32_t>(buf16_ + 4, 0x00000000, is_little_endian);
         oss.write((const char*)buf16_, 8);
       } else {
-        if (vr_explicit) {
+        if (is_explicit_vr) {
           switch (vr) {
             case VR::FL:
             case VR::FD:
@@ -1089,7 +1087,7 @@ void DataSet::saveToStream(std::ostream& oss) {
 
               // VR 2 bytes, length 2 bytes
               *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
-              store_e<uint16_t>(buf16_ + 6, de->length(), little_endian);
+              store_e<uint16_t>(buf16_ + 6, de->length(), is_little_endian);
               oss.write((const char*)buf16_, 8);
               break;
 
@@ -1107,16 +1105,16 @@ void DataSet::saveToStream(std::ostream& oss) {
             default:
               // VR 2 bytes, 0000h, length 4 bytes
               *(uint16_t*)(buf16_ + 4) = *(uint16_t*)(VR::repr(vr));
-              store_e<uint16_t>(buf16_ + 6, 0, little_endian);
-              store_e<uint32_t>(buf16_ + 8, de->length(), little_endian);
+              store_e<uint16_t>(buf16_ + 6, 0, is_little_endian);
+              store_e<uint32_t>(buf16_ + 8, de->length(), is_little_endian);
               oss.write((const char*)buf16_, 12);
               break;
           }
-        } else {  // vr_explicit == false, little_endian should be true.
+        } else {  // is_explicit_vr == false, is_little_endian should be true.
           // length 4 bytes
           store_le<uint32_t>(buf16_ + 4, de->length());
           oss.write((const char*)buf16_, 8);
-        }  // if (vr_explicit)
+        }  // if (is_explicit_vr)
 
         oss.write((char*)de->value_ptr(), de->length());
       }  // vr == VR::SQ or VR::PIXSEQ or VR::...
@@ -1182,8 +1180,6 @@ void DataSet::loadDicomFile(tag_t load_until){
 
     std::string t = getDataElement(0x00020010)->toBytes();
     transfer_syntax_ = UID::from_uidvalue(t.c_str());
-    is_little_endian_ = (transfer_syntax_ != UID::EXPLICIT_VR_BIG_ENDIAN);
-    is_vr_explicit_ = (transfer_syntax_ != UID::IMPLICIT_VR_LITTLE_ENDIAN);
 
     if (transfer_syntax_ == UID::DEFLATED_EXPLICIT_VR_LITTLE_ENDIAN) {
       DataElement* de = getDataElement(0x00020000);
@@ -1278,9 +1274,9 @@ void DataSet::copyFrameData(size_t index, uint8_t* data, int datasize,
     int nframes = getDataElement(0x00280008)->toLong(1);  // NumberOfFrames
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-    bool needswap = (is_little_endian_ == true);
+    bool needswap = isLittleEndian();
 #else
-    bool needswap = (is_little_endian_ != true);
+    bool needswap = !isLittleEndian();
 #endif
 
     if (index >= nframes)

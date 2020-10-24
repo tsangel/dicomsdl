@@ -112,7 +112,7 @@ long DataElement::toLong(long default_value) {
   long value;
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::SS:
@@ -180,7 +180,7 @@ long long DataElement::toLongLong(long long default_value) {
   long long value;
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::SS:
@@ -266,7 +266,7 @@ std::vector<long> DataElement::toLongVector() {
   int nvalues;
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::SS:
@@ -335,7 +335,7 @@ std::vector<long long> DataElement::toLongLongVector() {
   int nvalues;
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::SS:
@@ -405,7 +405,7 @@ double DataElement::toDouble(double default_value) {
   double value;
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::FL:
@@ -458,7 +458,7 @@ std::vector<double> DataElement::toDoubleVector() {
   int nvalues;
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::FL:
@@ -976,7 +976,7 @@ void DataElement::fromLong(const long value) {
   uint8_t tmp[32];
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::SS:
@@ -1039,7 +1039,7 @@ void DataElement::fromLongLong(const long long value) {
   uint8_t tmp[32];
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::SS:
@@ -1102,7 +1102,7 @@ template<typename AVT, typename SVT>
 void DataElement::_fromNumberVectorToBytes(const std::vector<AVT> &value)
 {
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
   
   alloc_ptr_(value.size() *sizeof(SVT));
   SVT *p = (SVT *)ptr_;
@@ -1115,7 +1115,7 @@ void DataElement::_fromNumberVectorToBytes(const std::vector<AVT> &value)
 template <typename AVT>
 void DataElement::_fromNumberVectorToAttrTags(const std::vector<AVT> &value) {
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   alloc_ptr_(value.size() * sizeof(tag_t));
   uint16_t *p = (uint16_t *)ptr_;
@@ -1131,7 +1131,7 @@ void DataElement::fromDouble(const double value) {
   uint8_t tmp[32];
 
   bool is_little_endian =
-      parent_->is_little_endian() || TAG::group(tag_) == 0x0002;
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
   switch (vr_) {
     case VR::FL:
