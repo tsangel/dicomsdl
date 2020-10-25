@@ -11,18 +11,22 @@
 #include <type_traits>
 
 #include "dicom.h"
-#include "util.h"
 #include "instream.h"
+#include "util.h"
 
 namespace dicom {
 
+// -----------------------------------------------------------------------------
+// Templates for use only in DataElement...
+// -----------------------------------------------------------------------------
+
+// Convert 'AVT' type value' into string in 'SVT' type format.
+// AVT - argument value type -- long, long long, or double.
+// SVT - store value type, either long long for string in integer format --
+// (VR::IS, e.g. "1234") or in decimal format (VR::DS, e.g. "12.34").
+// Returns length of the resultant string.
 template <typename AVT, typename SVT>
-static int _value_to_string(AVT value, char tmp[32]) {
-  // convert 'AVT' type value' into string in 'SVT' type format.
-  // AVT - argument value type - long, long long, or double
-  // SVT - store value type, either long long for string in integer format
-  // (VR::IS, e.g. "1234") or in decimal format (VR::DS, e.g. "12.34"). Returns
-  // length of the resultant string.
+static int _valueToString(AVT value, char tmp[32]) {
   int len;
 
   if (std::is_integral<SVT>::value) {  // for VR::IS
@@ -41,7 +45,7 @@ static int _value_to_string(AVT value, char tmp[32]) {
     const char **fmt = decimal_formats;
     do {
       // value with any type will be cast into double
-      len = snprintf(tmp, 32, *fmt, (double) value);
+      len = snprintf(tmp, 32, *fmt, (double)value);
       if (len <= 16) break;
       ++fmt;
     } while (*fmt);
@@ -50,12 +54,106 @@ static int _value_to_string(AVT value, char tmp[32]) {
   return len;
 }
 
-DataElement::DataElement(tag_t tag, vr_t vr, size_t length, size_t offset, DataSet* parent)
-    : tag_(tag),
-      vr_(vr),
-      length_(length),
-      offset_(offset),
-      parent_(parent) {
+// Convert a string to a number. If `str` is `nullptr` or `strlen` is 0 or
+// `str` cannot be converted to the number, `_fromStringToNumber()` returns
+// `default_value`.
+// Used by `DataElement::toLong()`, `DataElement::toLongLong()`,
+// `DataElement::toDouble()`.
+template <class T>
+T _fromStringToNumber(const char *str, size_t strlen, T default_value) {
+  if (!str || strlen == 0) return default_value;
+
+  std::string s(str, strlen);  // add a '\0' end to string
+  str = s.c_str();
+  T value;
+  char *endptr = NULL;
+
+  if (std::is_same<T, long>::value)
+    value = strtol(str, &endptr, 10);
+  else if (std::is_same<T, long long>::value)
+    value = strtoll(str, &endptr, 10);
+  else if (std::is_same<T, double>::value)
+    value = strtod(str, &endptr);
+
+  if (str == endptr) return default_value;  // no conversion is performed
+
+  return value;
+}
+
+// Convert a string to a numbers and store to vecter.
+// `_fromStringToNumberVector()` checks `str` is `nullptr` or `strlen` is 0.
+// Used by `DataElement::toLongVector()`, `DataElement::toLongLongVector()`,
+// `DataElement::toDoubleVector()`.
+template <class T>
+void _fromStringToNumberVector(const char *str, size_t strlen,
+                               std::vector<T> &vec) {
+  if (!str || strlen == 0) return;
+
+  std::string s(str, strlen);  // add a '\0' end to string
+  str = s.c_str();
+  T value;
+  char *endptr = NULL;
+
+  while (1) {
+    if (std::is_same<T, long>::value)
+      value = strtol(str, &endptr, 10);
+    else if (std::is_same<T, long long>::value)
+      value = strtoll(str, &endptr, 10);
+    else if (std::is_same<T, double>::value)
+      value = strtod(str, &endptr);
+    if (str == endptr) break;  // encounter a unconvertible character.
+    vec.push_back(value);
+
+    if (*endptr == '\0') break;  // conversion is done.
+
+    str = endptr + 1;  // skip a delim character ('\\')
+  }
+}
+
+template <typename AVT, typename SVT>
+void DataElement::_fromNumberVectorToBytes(const std::vector<AVT> &value) {
+  bool is_little_endian =
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
+
+  alloc_ptr_(value.size() * sizeof(SVT));
+  SVT *p = (SVT *)ptr_;
+  for (auto v : value) {
+    store_e<SVT>(p, (SVT)v, is_little_endian);
+    ++p;
+  }
+}
+
+template <typename AVT>
+void DataElement::_fromNumberVectorToAttrTags(const std::vector<AVT> &value) {
+  bool is_little_endian =
+      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
+
+  alloc_ptr_(value.size() * sizeof(tag_t));
+  uint16_t *p = (uint16_t *)ptr_;
+  for (auto v : value) {
+    long _v = (long)v;
+    store_e<uint16_t>(p, _v >> 16, is_little_endian);
+    store_e<uint16_t>(p + 1, _v & 0xffff, is_little_endian);
+    p += 2;
+  }
+}
+
+// Used by `DataElement::toLongVector()`, `DataElement::toLongLongVector()`,
+// `DataElement::toDoubleVector()`.
+#define __BUFFER_TO_VECTOR__(T)                                  \
+  {                                                              \
+    Buffer<T> buf = toBuffer<T>();                               \
+    vec.reserve(buf.size);                                       \
+    for (size_t i = 0; i < buf.size; i++) vec.push_back(buf[i]); \
+  }
+
+// -----------------------------------------------------------------------------
+// END OF Templates for use only in DataElement...
+// -----------------------------------------------------------------------------
+
+DataElement::DataElement(tag_t tag, vr_t vr, size_t length, size_t offset,
+                         DataSet *parent)
+    : tag_(tag), vr_(vr), length_(length), offset_(offset), parent_(parent) {
   // DataElement should be constructed by DataSet::addDataElement
   // assert parent != nullptr
   if (vr_ == VR::SQ) {
@@ -93,7 +191,7 @@ DataElement::~DataElement() {
       this, TAG::repr(tag_).c_str(), VR::repr(vr_), length_, offset_, ptr_,
       parent_);
 
-    length_ = 0;
+  length_ = 0;
 }
 
 void *DataElement::value_ptr() {
@@ -137,13 +235,9 @@ long DataElement::toLong(long default_value) {
     case VR::UV:
       value = length_ >= 8 ? toBuffer<uint64_t>()[0] : default_value;
       break;
-    case VR::IS: 
-      if (!value_ptr())
-        value = default_value;
-      else {
-        std::string s((const char*) (value_ptr()), length_);
-        value = strtol(s.c_str(), NULL, 10);
-      }
+    case VR::IS:
+      value = _fromStringToNumber<long>((const char *)value_ptr(), length_,
+                                        default_value);
       break;
     default:
       LOGERROR_AND_THROW(
@@ -189,13 +283,9 @@ long long DataElement::toLongLong(long long default_value) {
     case VR::UV:
       value = length_ >= 8 ? toBuffer<uint64_t>()[0] : default_value;
       break;
-    case VR::IS: 
-      if (!value_ptr())
-        value = default_value;
-      else {
-        std::string s((const char*) (value_ptr()), length_);
-        value = strtol(s.c_str(), NULL, 10);
-      }
+    case VR::IS:
+      value = _fromStringToNumber<long long>((const char *)value_ptr(), length_,
+                                             default_value);
       break;
     default:
       LOGERROR_AND_THROW(
@@ -208,13 +298,6 @@ long long DataElement::toLongLong(long long default_value) {
 
   return value;
 }
-
-#define __BUFFER_TO_VECTOR__(T)                               \
-  {                                                           \
-    Buffer<T> buf = toBuffer<T>();                            \
-    vec.reserve(buf.size);                                    \
-    for (size_t i = 0; i < buf.size; i++) vec.push_back(buf[i]); \
-  }
 
 std::vector<long> DataElement::toLongVector() {
   std::vector<long> vec;
@@ -249,19 +332,9 @@ std::vector<long> DataElement::toLongVector() {
     case VR::OV:
       __BUFFER_TO_VECTOR__(uint64_t)
       break;
-    case VR::IS: {
-      char *startp, *p, *nextp;
-      long value;
-      startp = p = (char *)(value_ptr()); // value_ptr should be valid...
-      nextp = NULL;
-      while (1) {
-        value = strtol(p, &nextp, 10);
-        if (value == 0 && errno == EINVAL) break;  // no conversion is performed
-        vec.push_back(value);
-        p = nextp + 1;  // skip delim ('/')
-        if (p - startp >= (int)length_) break;
-      }
-    } break;
+    case VR::IS:
+      _fromStringToNumberVector<long>((const char *)value_ptr(), length_, vec);
+      break;
     default:
       LOGERROR_AND_THROW(
           "DataElement::toLongVector - "
@@ -306,19 +379,10 @@ std::vector<long long> DataElement::toLongLongVector() {
     case VR::OV:
       __BUFFER_TO_VECTOR__(uint64_t)
       break;
-    case VR::IS: {
-      char *startp, *p, *nextp;
-      long long value;
-      startp = p = (char *)(value_ptr()); // value_ptr should be valid...
-      nextp = NULL;
-      while (1) {
-        value = strtoll(p, &nextp, 10);
-        if (value == 0 && errno == EINVAL) break;  // no conversion is performed
-        vec.push_back(value);
-        p = nextp + 1;  // skip delim ('/')
-        if (p - startp >= (int)length_) break;
-      }
-    } break;
+    case VR::IS:
+      _fromStringToNumberVector<long long>((const char *)value_ptr(), length_,
+                                           vec);
+      break;
     default:
       LOGERROR_AND_THROW(
           "DataElement::toLongLongVector - "
@@ -338,21 +402,16 @@ double DataElement::toDouble(double default_value) {
   switch (vr_) {
     case VR::FL:
     case VR::OF:
-      value = length_ >= 2 ? toBuffer<float32_t>()[0] : default_value;
+      value = length_ >= 4 ? toBuffer<float32_t>()[0] : default_value;
       break;
     case VR::FD:
     case VR::OD:
-      value = length_ >= 2 ? toBuffer<float32_t>()[0] : default_value;
+      value = length_ >= 8 ? toBuffer<float64_t>()[0] : default_value;
       break;
     case VR::DS:
-      if (!value_ptr())
-        value = default_value;
-      else {
-        std::string s((const char*) (value_ptr()), length_);
-        return atof(s.c_str());
-      }
+      value = _fromStringToNumber<double>((const char *)value_ptr(), length_,
+                                          default_value);
       break;
-
     case VR::SS:
     case VR::US:
     case VR::OW:
@@ -390,20 +449,10 @@ std::vector<double> DataElement::toDoubleVector() {
     case VR::OD:
       __BUFFER_TO_VECTOR__(float64_t)
       break;
-    case VR::DS: {
-      char *startp, *p, *nextp;
-      double value;
-      startp = p = (char *)(value_ptr()); // value_ptr should be valid...
-      nextp = NULL;
-
-      while (1) {
-        value = strtod(p, &nextp);
-        if (p == nextp) break;  // no conversion is performed
-        vec.push_back(value);
-        p = nextp + 1;  // skip delim ('/')
-        if (p - startp >= (int)length_) break;
-      }
-    } break;
+    case VR::DS:
+      _fromStringToNumberVector<double>((const char *)value_ptr(), length_,
+                                        vec);
+      break;
     default:
       LOGERROR_AND_THROW("DataElement::toDoubleVector",
                          "Value of a DataElement %s, VR %s cannot be convert "
@@ -431,21 +480,13 @@ int DataElement::vm() {
     case VR::US:
     case VR::SS:
       return int(length_) / 2;
+      break;
 
-    case VR::AE:
-    case VR::AS:
-    case VR::CS:
-    case VR::DA:
-    case VR::DS:
-    case VR::DT:
-    case VR::IS:
-    case VR::LO:
-    case VR::PN:
-    case VR::SH:
-    case VR::TM:
-    case VR::UC:
+    case VR::AE:    case VR::AS:    case VR::CS:    case VR::DA:
+    case VR::DS:    case VR::DT:    case VR::IS:    case VR::LO:
+    case VR::PN:    case VR::SH:    case VR::TM:    case VR::UC:
     case VR::UI: {
-      uint8_t* p = static_cast<uint8_t*>(value_ptr());
+      uint8_t *p = static_cast<uint8_t *>(value_ptr());
       if (p) {
         int delims = 0;
         for (size_t i = 0; i < length_; i++)
@@ -453,25 +494,20 @@ int DataElement::vm() {
         return delims + 1;
       } else
         return 0;
-    }
+    } break;
 
       // text
     case VR::ST:
     case VR::UT:
     case VR::LT:
 
-    // LT, OB, OD, OF, OL, OW, SQ, ST, UN, UR or UT -> always 1
+      // LT, OB, OD, OF, OL, OW, SQ, ST, UN, UR or UT -> always 1
 
-    case VR::OB:
-    case VR::OD:
-    case VR::OF:
-    case VR::OL:
-    case VR::OW:
-    case VR::OV:
+    case VR::OB:    case VR::OD:    case VR::OF:
+    case VR::OL:    case VR::OW:    case VR::OV:
     case VR::SQ:
     case VR::UN:
     case VR::UR:
-
     default:
       return 1;
   }
@@ -503,15 +539,15 @@ static void de_value_lstrip(char **s, int *n) {
 
 template <typename T>
 Buffer<T> DataElement::toBuffer() {
-  if (sizeof(T) == 1) {
-    return Buffer<T>((T*)(value_ptr()), length_);
-  } else {
+  if (sizeof(T) == 1)
+    return Buffer<T>((T *)(value_ptr()), length_);
+  else {
     bool is_little_endian =
         parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
 
-    if (is_little_endian == (__BYTE_ORDER == __LITTLE_ENDIAN)) {
-      return Buffer<T>((T*)(value_ptr()), length_ / sizeof(T));
-    } else {
+    if (is_little_endian == (__BYTE_ORDER == __LITTLE_ENDIAN))
+      return Buffer<T>((T *)(value_ptr()), length_ / sizeof(T));
+    else {
       Buffer<T> buf(length_ / sizeof(T));
       if (sizeof(T) == 2)
         copyswap2((uint8_t *)buf.data, (uint8_t *)value_ptr(), length_);
@@ -523,7 +559,6 @@ Buffer<T> DataElement::toBuffer() {
     }
   }
 }
-
 
 std::string DataElement::toBytes(const char *default_value) {
   if (!isValid() || length_ == 0) return std::string(default_value);
@@ -579,8 +614,7 @@ std::string DataElement::toBytes(const char *default_value) {
     return std::string("");
 }
 
-std::wstring DataElement::repr(size_t max_length)
-{
+std::wstring DataElement::repr(size_t max_length) {
   // TODO: \n \t ...
   // TODO: LO - strip heading/trailing spaces!!!!!!!!!!!!!!!!!?????????????
   if (!isValid()) return L"n/a";
@@ -588,10 +622,10 @@ std::wstring DataElement::repr(size_t max_length)
 
   std::wstringstream oss;
   std::wstring reprstr;
-  auto _crop = [max_length](std::wstring s, std::wstring postfix) -> std::wstring {
+  auto _crop = [max_length](std::wstring s,
+                            std::wstring postfix) -> std::wstring {
     size_t maxlen = max_length - postfix.size();
-    if (max_length > 0 && s.size() > maxlen)
-      s = s.substr(0, maxlen) + postfix;
+    if (max_length > 0 && s.size() > maxlen) s = s.substr(0, maxlen) + postfix;
     return s;
   };
 
@@ -683,7 +717,8 @@ std::wstring DataElement::repr(size_t max_length)
       reprstr = _crop(oss.str(), L"...");
     } break;
     case VR::OFFSET: {
-      return (L"VR_OFFSET");  // TODO: -----------------------------------------------
+      return (L"VR_OFFSET");  // TODO:
+                              // -----------------------------------------------
     } break;
     case VR::SQ: {
       oss << L"SEQUENCE WITH " << toSequence()->size() << L" DATASET(s)";
@@ -729,12 +764,13 @@ std::wstring DataElement::repr(size_t max_length)
 std::vector<std::wstring> DataElement::toStringVector() {
   std::vector<std::wstring> vec;
 
-  if (!isValid() || length_ == 0)
-    return vec;
+  char *p = (char *)value_ptr();
+
+  if (!isValid() || length_ == 0 || !p) return vec;
 
   int vecsize = vm();
   vec.reserve(vecsize);
-  
+
   if (vecsize == 1) {
     vec.push_back(toString());
     return vec;
@@ -772,7 +808,7 @@ std::vector<std::wstring> DataElement::toStringVector() {
 
   bool need_strip_leading_space = false;
 
-  switch (vr_){
+  switch (vr_) {
     case VR::AE:
     case VR::AS:
     case VR::CS:
@@ -785,7 +821,7 @@ std::vector<std::wstring> DataElement::toStringVector() {
 
     case VR::DA:
     case VR::TM:
-    case VR::UI: 
+    case VR::UI:
       need_strip_leading_space = true;
       break;
     // case VR::UC:
@@ -794,28 +830,26 @@ std::vector<std::wstring> DataElement::toStringVector() {
       break;
   }
 
-  char *p = (char *)value_ptr();
   char *nextp;
-  int n = (int) length_; // remaining bytes
+  int n = (int)length_;  // remaining bytes
   int i;
 
   while (n > 0) {
     for (i = 0; i < n; i++) {
-      if (p[i] == '\\')
-        break;
+      if (p[i] == '\\') break;
     }
     // i==n (end of string) or p[i]=='\\' (end of an item)
-    if (i == n) { // end of string
+    if (i == n) {  // end of string
       nextp = p + i;
       n -= i;
-    } else { // end of an item
+    } else {  // end of an item
       nextp = p + i + 1;
       n -= (i + 1);
     }
 
     if (need_strip_leading_space) de_value_lstrip(&p, &i);
     de_value_rstrip(&p, &i);
-    
+
     vec.push_back(convert_to_unicode(p, i, charset));  // may throw error
     p = nextp;
   }
@@ -824,17 +858,15 @@ std::vector<std::wstring> DataElement::toStringVector() {
 }
 
 std::wstring DataElement::toString(const wchar_t *default_value) {
-  if (!isValid())
-    return default_value;
+  if (!isValid()) return default_value;
 
-  if (length_ == 0)
-    return std::wstring(L"");
+  char *p = (char *)value_ptr();
+  int n = (int)length_;
+
+  if (length_ == 0 || !p) return std::wstring(L"");
 
   charset_t charset;
   std::wstring ws;
-
-  char *p = (char *)value_ptr();
-  int n = (int) length_;
 
   switch (vr_) {
     // ignore leading and trailing spaces
@@ -873,7 +905,7 @@ std::wstring DataElement::toString(const wchar_t *default_value) {
                   // significant
       de_value_rstrip(&p, &n);
       break;
-      
+
     default:
       break;
   }
@@ -968,7 +1000,7 @@ void DataElement::fromLong(const long value) {
     case VR::DS:
       fromDouble((double)value);
       return;
-      break;      
+      break;
     default:
       LOGERROR_AND_THROW(
           "DataElement::setValue(long) - "
@@ -1043,35 +1075,6 @@ void DataElement::fromLongLong(const long long value) {
   memcpy(ptr_, tmp, length_);
 }
 
-template<typename AVT, typename SVT>
-void DataElement::_fromNumberVectorToBytes(const std::vector<AVT> &value)
-{
-  bool is_little_endian =
-      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
-  
-  alloc_ptr_(value.size() *sizeof(SVT));
-  SVT *p = (SVT *)ptr_;
-  for (auto v: value) {
-    store_e<SVT>(p, (SVT)v, is_little_endian);
-    ++p;
-  }
-}
-
-template <typename AVT>
-void DataElement::_fromNumberVectorToAttrTags(const std::vector<AVT> &value) {
-  bool is_little_endian =
-      parent_->isLittleEndian() || TAG::group(tag_) == 0x0002;
-
-  alloc_ptr_(value.size() * sizeof(tag_t));
-  uint16_t *p = (uint16_t *)ptr_;
-  for (auto v : value) {
-    long _v = (long)v;
-    store_e<uint16_t>(p, _v >> 16, is_little_endian);
-    store_e<uint16_t>(p + 1, _v & 0xffff, is_little_endian);
-    p += 2;
-  }
-}
-
 void DataElement::fromDouble(const double value) {
   uint8_t tmp[32];
 
@@ -1088,7 +1091,7 @@ void DataElement::fromDouble(const double value) {
       length_ = 8;
       break;
     case VR::DS:
-      length_ = _value_to_string<double, double>(value, (char *)tmp);
+      length_ = _valueToString<double, double>(value, (char *)tmp);
       if (length_ & 1) {
         tmp[length_] = ' ';  // trailing space to make length even.
         length_++;
@@ -1125,7 +1128,7 @@ void DataElement::_fromNumberVectorToString(const std::vector<AVT> &value) {
   int len;
   tmpstr.reserve(value.size() * 8);
   for (auto v : value) {
-    len = _value_to_string<AVT, SVT>(v, tmp);
+    len = _valueToString<AVT, SVT>(v, tmp);
     tmpstr.append(tmp, len);
     tmpstr.push_back('\\');
   }
@@ -1136,8 +1139,7 @@ void DataElement::_fromNumberVectorToString(const std::vector<AVT> &value) {
 // AVT; argument value type - long, long long or double
 template <typename AVT>
 bool DataElement::_fromNumberVector(const std::vector<AVT> &value) {
-  if (value.size() == 0)
-    return true;
+  if (value.size() == 0) return true;
 
   switch (vr_) {
     case VR::SS:
@@ -1150,7 +1152,7 @@ bool DataElement::_fromNumberVector(const std::vector<AVT> &value) {
       _fromNumberVectorToBytes<AVT, int64_t>(value);
       break;
     case VR::US:
-    case VR::OW:    
+    case VR::OW:
       _fromNumberVectorToBytes<AVT, uint16_t>(value);
       break;
     case VR::UL:
@@ -1214,12 +1216,9 @@ void DataElement::fromDoubleVector(const std::vector<double> &value) {
 }
 
 void DataElement::fromString(const wchar_t *value, size_t length) {
-  if (value == nullptr || *value == L'\0')
-    return;
+  if (value == nullptr || *value == L'\0') return;
 
-  if (length == -1) {
-    length = wcslen(value);
-  }
+  if (length == (size_t)-1) length = wcslen(value);
 
   charset_t charset;
   DataSet *dataset = parent_;
@@ -1291,11 +1290,10 @@ void DataElement::fromStringVector(const std::vector<std::wstring> &value) {
   }
   std::wstring valstr;
   size_t totalsize = 0;
-  for (auto v: value) {
-    totalsize += value.size() + 1;
-  }
+  for (auto v : value) totalsize += value.size() + 1;
   valstr.reserve(totalsize);
-  for (auto v: value) {
+
+  for (auto v : value) {
     valstr.append(v);
     valstr.push_back(L'\\');
   }
@@ -1303,13 +1301,10 @@ void DataElement::fromStringVector(const std::vector<std::wstring> &value) {
   fromString(valstr);
 }
 
-void  DataElement::fromBytes(const char *value, size_t length) {
-  if (length == 0)
-    return;
+void DataElement::fromBytes(const char *value, size_t length) {
+  if (length == 0) return;
 
-  if (length == -1) {
-    length = strlen(value);
-  }
+  if (length == (size_t)-1) length = strlen(value);
 
   alloc_ptr_((length & 1) ? length + 1 : length);
   memcpy(ptr_, value, length);
@@ -1369,8 +1364,7 @@ void DataElement::alloc_ptr_(size_t size) {
   length_ = size;
 }
 
-void DataElement::_free_ptr()
-{
+void DataElement::_free_ptr() {
   if (ptr_) {
     ::free(ptr_);
     ptr_ = nullptr;
