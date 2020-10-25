@@ -606,6 +606,31 @@ std::string DataElement::toBytes(const char *default_value) {
         de_value_rstrip(&s, &n);
         break;
 
+      case VR::FD:
+      case VR::OD:
+      case VR::SV:
+      case VR::UV:
+      case VR::OV:  // 8 byte swap if needed
+        return std::string(toBuffer<uint64_t>());
+        break;
+      case VR::FL:
+      case VR::OF:
+      case VR::UL:
+      case VR::SL:
+      case VR::OL:  // 4 byte swap if needed
+        return std::string(toBuffer<uint32_t>());
+        break;
+      case VR::US:
+      case VR::SS:
+      case VR::AT:
+      case VR::OW:  // 2 byte swap if needed
+        return std::string(toBuffer<uint16_t>());
+        break;
+
+      case VR::SQ:
+      case VR::PIXSEQ:
+        return std::string("");
+
       default:
         break;
     }

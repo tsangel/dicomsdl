@@ -266,6 +266,10 @@ struct Buffer {
   T* alloc(size_t n);
   T* realloc(size_t n);
   void free();
+
+  operator std::string() const {
+    return std::string((const char*)data, size * sizeof(T));
+  };
 };
 
 template <typename T>
