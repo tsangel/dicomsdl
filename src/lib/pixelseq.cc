@@ -17,6 +17,28 @@
 
 namespace dicom {
 
+PixelFrame::PixelFrame()
+    : startoffset_(0),
+      endoffset_(0),
+      encoded_data_(nullptr),
+      encoded_data_size_(0) {
+  LOG_DEBUG("++ @%p\tPixelFrame::PixelFrame()", this);
+}
+
+PixelFrame::~PixelFrame() {
+  if (startoffset_ || endoffset_) {
+    LOG_DEBUG("-- @%p\tPixelFrame::~PixelFrame() start @{%08x}.", this,
+              startoffset_);
+  } else if (encoded_data_) {
+    LOG_DEBUG("-- @%p\tPixelFrame::~PixelFrame() encoded frame @%p.", this,
+              encoded_data_);
+  } else {
+    LOG_DEBUG("-- @%p\tPixelFrame::~PixelFrame()", this, encoded_data_);
+  }
+
+  if (encoded_data_) ::free(encoded_data_);
+}
+
 PixelSequence::PixelSequence(DataSet *root_dataset, tsuid_t tsuid)
     : root_dataset_(root_dataset),
       transfer_syntax_(tsuid),

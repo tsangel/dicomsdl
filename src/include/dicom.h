@@ -590,8 +590,39 @@ class Sequence {
 
 // PixelSequence ===============================================================
 
-struct PixelFrame;
-struct PixelFragment;
+struct PixelFrame {
+  // `frag_offsets_`, `startoffset_`, `endoffset_` are set only when
+  // `PixelFrame` is loaded from `InStream`. Encoded pixel data are on the
+  // `InStream`.
+
+  // start and endoffset pair of pixel fragments [start] [end] [start] [end] ...
+  std::vector<size_t> frag_offsets_;
+  // start offset in `InStream`.
+  size_t startoffset_;
+  // end offset == `startoffset_` of next frame.
+  size_t endoffset_;
+
+  // `encoded_data_`, `encoded_data_size_` are used only when `PixelFrame` is
+  // created by user. Encoded pixel data are on the `encoded_data_`.
+
+  uint8_t* encoded_data_;     // encoded pixel data.
+  size_t encoded_data_size_;  // length of encoded pixel data.
+
+  PixelFrame();
+  ~PixelFrame();
+
+  // load a frame from instream; should be called from
+  // PixelSequence::loadFrames().
+  // buf should be uint8_t[8];
+  void load(InStream* instream, size_t frame_length, uint8_t* buf);
+
+  // setEncodedData() should be called from PixelSequence::setEncodedFrameData()
+  void setEncodedData(uint8_t* data, size_t size);
+
+ public:
+  size_t encodedDataSize() { return encoded_data_size_; };
+};
+
 class PixelSequence {
   std::vector<std::unique_ptr<PixelFrame>> frames_;
   std::unique_ptr<InStream> is_;  // InSubStream
@@ -634,6 +665,12 @@ class PixelSequence {
 
   Buffer<uint8_t> encodedFrameData(size_t index);
   size_t encodedFrameDataSize(size_t index);
+};
+
+struct PixelSequenceItem {
+  tag_t tag;
+  size_t length;
+  size_t offset;
 };
 
 // load/unload codec for encoding/decoding pixels
