@@ -34,9 +34,9 @@ namespace dicom {
 
 const char *const DICOMSDL_VERSION = "0.107.7";
 
-const char *const DICOMSDL_UIDPREFIX = "1.2.826.0.1.3680043.8.417.1";
-const char *const DICOMSDL_IMPLCLASSUID = "1.2.826.0.1.3680043.8.417.1.1";
-const char *const DICOMSDL_IMPLVERNAME = "DICOMSDL 2020OCT";
+const char *const DICOMSDL_UIDPREFIX = "1.3.6.1.4.1.56559";
+const char *const DICOMSDL_IMPLCLASSUID = "1.3.6.1.4.1.56559.1";
+const char *const DICOMSDL_IMPLVERNAME = "DICOMSDL 2020NOV";
 const char *const DICOMSDL_FILESETID = "DICOMDIR";
 const char *const DICOMSDL_SOURCEAETITLE = "DICOMSDL";
 
