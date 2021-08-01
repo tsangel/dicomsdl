@@ -590,7 +590,21 @@ class Sequence {
 
 // PixelSequence ===============================================================
 
+
+struct PixelSequenceItem {
+  // Start position in the DICOM file.
+  // Item value's position is `position` + 4 (Item Tag) + 4 (Item length)
+  size_t position;
+
+  // Item Length.
+  // Next item's position == this.position + 4 + 4 + this.length
+  size_t length;
+};
+
 struct PixelFrame {
+  std::vector<PixelSequenceItem> pixseq_items_;
+
+ public:
   // `frag_offsets_`, `startoffset_`, `endoffset_` are set only when
   // `PixelFrame` is loaded from `InStream`. Encoded pixel data are on the
   // `InStream`.
@@ -599,7 +613,7 @@ struct PixelFrame {
   std::vector<size_t> frag_offsets_;
   // start offset in `InStream`.
   size_t startoffset_;
-  // end offset == `startoffset_` of next frame.
+  // end offset in `InStream` (== `startoffset_` of next frame.)
   size_t endoffset_;
 
   // `encoded_data_`, `encoded_data_size_` are used only when `PixelFrame` is
@@ -621,9 +635,16 @@ struct PixelFrame {
 
  public:
   size_t encodedDataSize() { return encoded_data_size_; };
+  void addItem(PixelSequenceItem item);
 };
 
 class PixelSequence {
+  void readItems_(std::vector<PixelSequenceItem>& pixseq_items);
+  void assembleItemsWithoutBasicOffsetTable_(
+      std::vector<PixelSequenceItem>& pixseq_items);
+  void assembleItemsWithBasicOffsetTable_(
+      std::vector<PixelSequenceItem>& pixseq_items);
+
   std::vector<std::unique_ptr<PixelFrame>> frames_;
   std::unique_ptr<InStream> is_;  // InSubStream
 
@@ -665,12 +686,6 @@ class PixelSequence {
 
   Buffer<uint8_t> encodedFrameData(size_t index);
   size_t encodedFrameDataSize(size_t index);
-};
-
-struct PixelSequenceItem {
-  tag_t tag;
-  size_t length;
-  size_t offset;
 };
 
 // load/unload codec for encoding/decoding pixels

@@ -175,6 +175,90 @@ void PixelFrame::load(InStream *instream, size_t frame_length, uint8_t* buf) {
   endoffset_ = instream->tell();
 }
 
+void PixelFrame::addItem(PixelSequenceItem item)
+{
+  pixseq_items_.push_back(item);
+}
+
+void PixelSequence::readItems_(std::vector<PixelSequenceItem> &pixseq_items)
+{
+  // Table A.4-1. Example for Elements of an Encoded Single-Frame Image Defined
+  // as a Sequence of Three Fragments Without Basic Offset Table Item
+  // Value. Table A.4-2. Examples of Elements for an Encoded Two-Frame Image
+  // Defined as a Sequence of Three Fragments with Basic Table Item
+  // Values.
+
+  // `instream->tell()` is located just after Tag (7fe0,0010), VR(== 'OB'), and
+  // length(== 0xFFFFFFFF).
+  // Read Item Tags, Item Length, and position of Item Value, build
+  // `PixelSequenceItem`, then store them into pixseq_items_.
+
+  uint8_t buf[8];
+  tag_t tag;
+  size_t length;
+
+  InStream *instream = is_.get();
+
+  while (true) {
+    if (instream->read(buf, 8) != 8)
+      LOGERROR_AND_THROW(
+          "PixelSequence::readItems_ - cannot read 8 bytes from {%#x}",
+          instream->tell());
+
+    tag = TAG::load_32le(buf);
+    length = load_le<uint32_t>(buf + 4);
+
+    // if buf[8] holds Sequence Delimiter Tag and Item Length (0000 0000H).
+    if (tag == 0xFFFEE0DD) break;
+
+    pixseq_items.push_back(PixelSequenceItem{instream->tell() - 8, length});
+    if (instream->skip(length) != length)
+      LOGERROR_AND_THROW(
+          "PixelSequence::readItems_ - cannot skip %zu bytes from {%#x}",
+          length, instream->tell());
+  }
+
+  // TODO>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // std::vector<PixelSequenceItem> pixseq_items;
+  // readItems_(pixseq_items);
+  // if (pixseq_items[0].length > 0)
+  //   assembleItemsWithBasicOffsetTable_(pixseq_items);
+  // else
+  //   assembleItemsWithoutBasicOffsetTable_(pixseq_items);
+}
+
+void PixelSequence::assembleItemsWithoutBasicOffsetTable_(
+    std::vector<PixelSequenceItem> &pixseq_items) {
+  // pixseq_items[0].length == 0
+  PixelFrame *frame = nullptr;
+  for (size_t ii = 1; ii < pixseq_items.size(); ii++) {
+    if (!frame)
+      frame = addPixelFrame();
+    frame->addItem(pixseq_items[ii]);
+
+    // Let's check this item holds EOI or EOC marker.
+    size_t pos, len;
+    pos = pixseq_items[ii].position;
+    len = pixseq_items[ii].length;
+    uint8_t *ptr = (uint8_t *)is_->get_pointer(pos, len);
+    if (!ptr)
+      LOGERROR_AND_THROW(
+          "PixelSequence::assembleItemsWithoutBasicOffsetTable_ - cannot get "
+          "%zu bytes from {%#x}",
+          len, pos);
+    // If EOI or EOC doesnot exist in this item, next item will be added to
+    // current frame.
+    if (check_have_ffd9(ptr, len))
+      frame = nullptr;  
+  }
+}
+
+void PixelSequence::assembleItemsWithBasicOffsetTable_(
+    std::vector<PixelSequenceItem> &pixseq_items) {
+  // pixseq_items[0].length > 0
+  pixseq_items;
+}
+
 void PixelSequence::loadFrames()
 {
   uint8_t buf[8];
