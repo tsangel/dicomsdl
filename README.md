@@ -41,7 +41,7 @@ DICOMSDL was successfully compiled and ran on following environments
 * Microsoft Windows 7/10 x86/x64
 * Linux x86/x64 (Ubuntu)
 * MacOS 10.9+
-* Python 2.7, 3.5-3.8
+* Python 2.7, 3.5-3.9
 
 # Some examples
 
