@@ -2,7 +2,7 @@ environment:
   global:
     CIBW_TEST_COMMAND: "pytest {project}/test"
     CIBW_TEST_REQUIRES: pytest numpy pillow
-    CIBW_SKIP: pp* *ppc64le *aarch64 *s390x
+    CIBW_SKIP: pp* *ppc64le *aarch64 *s390x *arm64 *universal2
 
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
@@ -19,7 +19,7 @@ init:
 
 install:
 - git submodule update --init --recursive
-- python -m pip install cibuildwheel==1.5.5
+- python -m pip install cibuildwheel==2.1.1
 
 build_script: python -m cibuildwheel --output-dir wheelhouse
 
