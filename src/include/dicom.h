@@ -486,6 +486,7 @@ class DataSet {
   inline int size() { return (int)edict_.size(); }
 
   void removeDataElement(tag_t tag);  /// Remove a data element.
+  void removeDataElement(const char *tagstr);
 
   void attachToMemory(const uint8_t* data, size_t datasize, bool copy_data);
   void attachToFile(const char* filename);

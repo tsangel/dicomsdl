@@ -421,7 +421,10 @@ PYBIND11_MODULE(_dicomsdl, m) {
       .def("getDataElement",
            (DataElement * (DataSet::*)(const char *)) & DataSet::getDataElement,
            py::return_value_policy::reference_internal)
-      .def("removeDataElement", &DataSet::removeDataElement)
+      .def("removeDataElement",
+           (void (DataSet::*)(tag_t)) & DataSet::removeDataElement)
+      .def("removeDataElement",
+           (void (DataSet::*)(const char *)) & DataSet::removeDataElement)
       .def("attachToFile", &DataSet::attachToFile)
       .def("attachToMemory", &DataSet::attachToMemory)
       .def("getSpecificCharset", &DataSet::getSpecificCharset, "index"_a = 0)

@@ -374,6 +374,139 @@ DataElement* DataSet::getDataElement(const char *tagstr) {
 
 void DataSet::removeDataElement(tag_t tag) { edict_.erase(tag); }
 
+void DataSet::removeDataElement(const char *tagstr) {
+  char *_tagstr = (char *) tagstr;
+  char *nextptr;
+  char *endptr = (char *) tagstr + strlen(tagstr);
+
+  tag_t tag, gggg, eeee;
+  tag_t block;
+  int seqidx;
+  DataElement *el;
+  DataSet* dataset = this;
+
+  while (1) {
+    // ignore starting (
+    if (_tagstr[0] == '(')
+      _tagstr++;
+
+    if ((_tagstr[0] >= '0' && _tagstr[0] <= '9') ||   //
+        ((_tagstr[0] == 'F' || _tagstr[0] == 'f') &&  //
+         (_tagstr[1] == 'F' || _tagstr[1] == 'f'))) {
+      // string starts with number - read gggg or ggggeeee
+      tag = tag_t(strtol(_tagstr, &nextptr, 16));
+
+      if (nextptr && (*nextptr == ',' || *nextptr == '{')) {
+        // if string->hex conversion is stopped by ',' or '{',
+        // first portion is group number
+        gggg = tag;
+
+        // if ",{" string sequence, skip ','
+        if (*nextptr == ',' && nextptr[1] == '{') nextptr++;
+
+        // string between { and } is creator id
+        // e.g. 0000,{CREATOR}00
+        if ((*nextptr == '{') && (tag & 1)) {
+          _tagstr = nextptr + 1;
+
+          nextptr++;
+          int n = 0;
+          while (nextptr[n] && nextptr[n] != '}') n++;
+
+          if (nextptr[n] == '\0') {
+            LOGERROR_AND_THROW(
+                "DataSet::removeDataElement(\"%s\"): "
+                "malformed string -- no matching '}'",
+                tagstr);
+            el = DataElement::NullElement();
+            break;
+          }
+          std::string creator(nextptr, n);
+
+          // find element from gggg0001 to gggg00ff
+          for (block = 0x10; block <= 0xff; block++) {
+            DataElement* creator_de =
+                dataset->getDataElement(TAG::build(gggg, block));
+            if (!creator_de->isValid()) continue;
+            if (creator_de->toBytes() == creator) break;
+          }
+
+          if (block > 0xff) {
+            // no such block of elements from private creator
+            el = DataElement::NullElement();
+            break;
+          }
+
+          _tagstr = nextptr + n + 1;
+
+          // Get element number in the block
+          eeee = tag_t(strtol(_tagstr, &nextptr, 16));
+          eeee = (block << 8) + (eeee & 0xff);
+        } else {
+          _tagstr = nextptr + 1;
+
+          // Get element number in eeee form
+          eeee = tag_t(strtol(_tagstr, &nextptr, 16));
+        }
+
+        if (eeee == 0 && _tagstr == nextptr)
+          LOGERROR_AND_THROW(
+              "DataSet::removeDataElement - "
+              "malformed string '%s'; no number after ',' or '}'",
+              tagstr);
+
+        tag = TAG::build(gggg, eeee);
+
+        if (*nextptr == ')') nextptr++;
+      }
+    } else {
+      // tagstr is keyword string
+      int n = 0;
+
+      while (_tagstr[n] && _tagstr[n] != '.')  // take until next '.'
+        n++;
+      tag = TAG::from_keyword(std::string(_tagstr, n).c_str());
+      if (tag == 0xffffffff)
+        LOGERROR_AND_THROW(
+            "DataSet::removeDataElement - error in string '%s'; no such keyword "
+            "'%s'",
+            tagstr, std::string(_tagstr, n).c_str());
+
+      nextptr = (char *) _tagstr + n;
+    }
+
+    _tagstr = nextptr + 1;
+
+    el = dataset->getDataElement(tag);
+    if (!el->isValid())
+      break;
+
+    if (_tagstr >= endptr)
+      break;
+
+    if (el->vr() != VR::SQ)
+      LOGERROR_AND_THROW(
+          "DataSet::removeDataElement - error in string '%s'; VR of element %s "
+          "(VR::%s) is not VR::SQ",
+          tagstr, TAG::repr(tag).c_str(), VR::repr(el->vr()));
+
+    // number after '.' is DataSet sequence number, starting from 0
+    seqidx = int(strtol(_tagstr, &nextptr, 10));
+
+    dataset = el->toSequence()->getDataSet(seqidx);
+
+    _tagstr = nextptr + 1;
+    if (dataset == NULL || _tagstr >= endptr) {
+      // no DataSet with index in the Sequence
+      el = DataElement::NullElement();
+      break;
+    }
+  }
+
+  if (el->isValid())
+    dataset->removeDataElement(el->tag());
+}
+
 charset_t DataSet::getSpecificCharset(int index) {
   if (this != root_dataset_)
     return root_dataset_->getSpecificCharset();

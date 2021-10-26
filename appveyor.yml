@@ -1,7 +1,8 @@
 environment:
   global:
     CIBW_TEST_COMMAND: "pytest {project}/test"
-    CIBW_TEST_REQUIRES: pytest numpy pillow
+    # CIBW_TEST_REQUIRES: pytest numpy pillow # pillow installation failed in python 3.10
+    CIBW_TEST_REQUIRES: pytest numpy
     CIBW_SKIP: pp* *ppc64le *aarch64 *s390x *arm64 *universal2
     CIBW_PRERELEASE_PYTHONS: False
 
