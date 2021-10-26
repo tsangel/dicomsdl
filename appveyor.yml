@@ -2,7 +2,7 @@ environment:
   global:
     CIBW_TEST_COMMAND: "pytest {project}/test"
     CIBW_TEST_REQUIRES: pytest numpy pillow
-    CIBW_SKIP: pp* *ppc64le *aarch64 *s390x *arm64 *universal2 cp310-*
+    CIBW_SKIP: pp* *ppc64le *aarch64 *s390x *arm64 *universal2
     CIBW_PRERELEASE_PYTHONS: False
 
   matrix:
