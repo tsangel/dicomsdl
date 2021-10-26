@@ -21,9 +21,12 @@ init:
 
 install:
 - git submodule update --init --recursive
-- python -m pip install cibuildwheel==2.1.1
 
-build_script: python -m cibuildwheel --output-dir wheelhouse
+build_script:
+- python -m pip install cibuildwheel==1.12.0
+- python -m cibuildwheel --output-dir wheelhouse
+- python -m pip install -U cibuildwheel==2.2.0
+- python -m cibuildwheel --output-dir wheelhouse
 
 artifacts:
   - path: "wheelhouse\\*.whl"
