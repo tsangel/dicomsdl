@@ -38,7 +38,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       [](py::bytes data, bool copy_data = true, tag_t load_until = 0xffffffff,
          bool keep_on_error = false) {
         char *buffer;
-        ssize_t length;
+        py::ssize_t length;
         if (PYBIND11_BYTES_AS_STRING_AND_SIZE(data.ptr(), &buffer, &length))
           py::pybind11_fail("Unable to extract bytes contents!");
 
@@ -257,7 +257,7 @@ PYBIND11_MODULE(_dicomsdl, m) {
       "convert_to_unicode",
       [](py::bytes data, charset_t charset) {
         char *buffer;
-        ssize_t length;
+        py::ssize_t length;
         if (PYBIND11_BYTES_AS_STRING_AND_SIZE(data.ptr(), &buffer, &length))
           py::pybind11_fail("Unable to extract bytes contents!");
 
