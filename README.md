@@ -38,9 +38,9 @@ $ python setup.py install
 
 DICOMSDL was successfully compiled and ran on following environments
 
-* Microsoft Windows 7/10 x86/x64
+* Microsoft Windows 7/10/11 (x86, x64)
 * Linux x86/x64 (Ubuntu)
-* MacOS 10.9+
+* MacOS 10.9+ (x86_64, arm64)
 * Python 2.7, 3.5-3.10
 
 If you have `ImportError` in Microsoft Windows, install [Microsoft Visual C++ Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170).

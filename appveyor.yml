@@ -1,6 +1,6 @@
 environment:
   global:
-    CIBW_SKIP: pp* *ppc64le *aarch64 *s390x *arm64 *universal2
+    CIBW_SKIP: pp* *ppc64le *aarch64 *s390x *win_arm64 *universal2
     CIBW_PRERELEASE_PYTHONS: False
 
     CIBW_TEST_COMMAND: "pytest {project}/test"

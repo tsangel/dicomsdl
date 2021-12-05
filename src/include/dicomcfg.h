@@ -32,11 +32,11 @@ typedef double float64_t;
 
 namespace dicom {
 
-const char *const DICOMSDL_VERSION = "0.107.11";
+const char *const DICOMSDL_VERSION = "0.108.1";
 
 const char *const DICOMSDL_UIDPREFIX = "1.3.6.1.4.1.56559";
 const char *const DICOMSDL_IMPLCLASSUID = "1.3.6.1.4.1.56559.1";
-const char *const DICOMSDL_IMPLVERNAME = "DICOMSDL 2021OCT";
+const char *const DICOMSDL_IMPLVERNAME = "DICOMSDL 2021DEC";
 const char *const DICOMSDL_FILESETID = "DICOMDIR";
 const char *const DICOMSDL_SOURCEAETITLE = "DICOMSDL";
 

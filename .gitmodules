@@ -1,3 +1,6 @@
 [submodule "src/ext/pybind11"]
 	path = src/ext/pybind11
 	url = https://github.com/pybind/pybind11
+[submodule "src/ext/openjpeg/openjpeg.git"]
+	path = src/ext/openjpeg/openjpeg.git
+	url = https://github.com/uclouvain/openjpeg
