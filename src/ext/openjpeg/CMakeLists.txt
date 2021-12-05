@@ -190,7 +190,7 @@ configure_file(
  ${CMAKE_CURRENT_BINARY_DIR}/openjpeg.git/src/lib/openjp2/opj_config_private.h
  @ONLY
  )
- 
+
 # ------------------------------------------------------------------------------
 SET (OPENJP2_SRC openjpeg.git/src/lib/openjp2)
 SET (C_CXX_SOURCES

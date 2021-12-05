@@ -32,7 +32,7 @@ typedef double float64_t;
 
 namespace dicom {
 
-const char *const DICOMSDL_VERSION = "0.108.1";
+const char *const DICOMSDL_VERSION = "0.108.2";
 
 const char *const DICOMSDL_UIDPREFIX = "1.3.6.1.4.1.56559";
 const char *const DICOMSDL_IMPLCLASSUID = "1.3.6.1.4.1.56559.1";

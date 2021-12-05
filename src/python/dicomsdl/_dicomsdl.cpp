@@ -27,7 +27,24 @@ struct Iterator {
 };
 
 PYBIND11_MODULE(_dicomsdl, m) {
-  m.attr("version") = py::cast(DICOMSDL_VERSION);
+  m.attr("DICOMSDL_VERSION") = py::cast(DICOMSDL_VERSION);
+  m.attr("DICOMSDL_UIDPREFIX") = py::cast(DICOMSDL_UIDPREFIX);
+  m.attr("DICOMSDL_IMPLCLASSUID") = py::cast(DICOMSDL_IMPLCLASSUID);
+  m.attr("DICOMSDL_IMPLVERNAME") = py::cast(DICOMSDL_IMPLVERNAME);
+  m.attr("DICOMSDL_FILESETID") = py::cast(DICOMSDL_FILESETID);
+  m.attr("DICOMSDL_SOURCEAETITLE") = py::cast(DICOMSDL_SOURCEAETITLE);
+
+#ifdef __AVX2__
+  m.attr("USE_AVX2") = py::cast(true);
+#else
+  m.attr("USE_AVX2") = py::cast(false);
+#endif // __AVX2__
+
+#ifdef __SSE2__
+  m.attr("USE_SSE2") = py::cast(true);
+#else
+  m.attr("USE_SSE2") = py::cast(false);
+#endif // __SSE2__
 
   m.def("open_file", &open_file, "Open a DICOM file from a file.", "filename"_a,
         "load_until"_a = 0xffffffff, "keep_on_error"_a = false);

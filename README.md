@@ -36,6 +36,12 @@ $ git clone --recursive https://github.com/tsangel/dicomsdl
 $ python setup.py install
 ```
 
+If you want to use AVX2, then set environment USE_AVX2.
+```
+$ set USER_AVX=ON
+$ python setup.py install
+```
+
 DICOMSDL was successfully compiled and ran on following environments
 
 * Microsoft Windows 7/10/11 (x86, x64)

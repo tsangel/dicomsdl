@@ -70,6 +70,14 @@ class CMakeBuild(build_ext):
                                                               self.distribution.get_version())
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
+
+        if 'USE_AVX2' in env:
+            cmake_args.append('-DUSE_AVX2=ON')
+            print("Use AVX2")
+        elif 'USE_SSE2' in env:
+            cmake_args.append('-USE_SSE2=ON')
+            print("Use SSE2")
+                        
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
