@@ -11,7 +11,7 @@
 #include <string.h>
 #include <sstream>
 
-#include "openjp2/openjpeg.h"
+#include "openjpeg.git/src/lib/openjp2/openjpeg.h"
 #include "imagecodec.h"
 #include "opj_codec.h"
 

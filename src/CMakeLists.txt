@@ -126,17 +126,10 @@ ENDMACRO (ADD_SOURCES)
 
 # ------------------------------------------------------------------------------
 
-
-include_directories("${PROJECT_SOURCE_DIR}/src/lib"
+INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src/lib"
 					"${PROJECT_SOURCE_DIR}/src/include"
 					"${PROJECT_SOURCE_DIR}/src/ext"
-					"${PROJECT_SOURCE_DIR}/src/ext/zlib"
-					"${PROJECT_SOURCE_DIR}/src/ext/openjpeg"
-					"${PROJECT_SOURCE_DIR}/src/ext/ijg"
-					"${PROJECT_SOURCE_DIR}/src/ext/charls"
-					"${CMAKE_BINARY_DIR}/src/ext/zlib"
 					)
-
 
 # ------------------------------------------------------------------------------
 # external modules
@@ -146,6 +139,7 @@ include_directories("${PROJECT_SOURCE_DIR}/src/lib"
 SET (DICOMSDL_LIBRARIES dicomsdl)
 
 IF (USE_IJG_CODEC)
+	INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src/ext/ijg")
 	ADD_SOURCES(ext/ijg)
 	ADD_LIBRARY(dicomsdl_ijg ${C_CXX_SOURCES})
 	SET (DICOMSDL_LIBRARIES ${DICOMSDL_LIBRARIES} dicomsdl_ijg)
@@ -157,6 +151,10 @@ ENDIF (USE_IJG_CODEC)
 IF (USE_OPENJPEG_CODEC)
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOPJ_STATIC")
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOPJ_STATIC")
+	INCLUDE_DIRECTORIES(
+		"${PROJECT_SOURCE_DIR}/src/ext/openjpeg"
+		"${CMAKE_BINARY_DIR}/src/ext/openjpeg/openjpeg.git/src/lib/openjp2"
+	)
 	ADD_SOURCES(ext/openjpeg)
 	ADD_LIBRARY(dicomsdl_openjpeg ${C_CXX_SOURCES})
 	SET (DICOMSDL_LIBRARIES ${DICOMSDL_LIBRARIES} dicomsdl_openjpeg)
@@ -165,21 +163,25 @@ ENDIF (USE_OPENJPEG_CODEC)
 
 # CharLS library ----------------------------------------------------------
 
-IF (USE_OPENJPEG_CODEC)
+IF (USE_CHARLS_CODEC)
+	INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src/ext/charls")
 	ADD_SOURCES(ext/charls)
 	ADD_LIBRARY(dicomsdl_charls ${C_CXX_SOURCES})
 	SET (DICOMSDL_LIBRARIES ${DICOMSDL_LIBRARIES} dicomsdl_charls)
-ENDIF (USE_OPENJPEG_CODEC)
+ENDIF (USE_CHARLS_CODEC)
 
 
 # zlib -------------------------------------------------------------------------
 
 IF (USE_ZLIB)
+	INCLUDE_DIRECTORIES(
+		"${PROJECT_SOURCE_DIR}/src/ext/zlib"
+		"${CMAKE_BINARY_DIR}/src/ext/zlib"
+	)
 	ADD_SOURCES(ext/zlib)
 	ADD_LIBRARY(dicomsdl_zlib ${C_CXX_SOURCES})
 	SET (DICOMSDL_LIBRARIES ${DICOMSDL_LIBRARIES} dicomsdl_zlib)
 ENDIF (USE_ZLIB)
-
 
 # ------------------------------------------------------------------------------
 # Define library 'dicomsdl'
