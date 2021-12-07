@@ -59,10 +59,10 @@ environment:
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
 
-stack: python 3.9
+stack: python 3.8
 
 init:
-  - cmd: set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
+  - cmd: set PATH=C:\Python38;C:\Python38\Scripts;%PATH%
 
 install:
   - git submodule update --init --recursive
@@ -71,12 +71,14 @@ build_script:
   - cmd: cd src\ext\pybind11
   - cmd: git checkout %PYBIND11_BRANCH%
   - cmd: cd ..\..\..
-  - cmd: python -m pip install cibuildwheel==%CIBW_VERSION%
-  - cmd: python -m cibuildwheel --output-dir wheelhouse
+  - cmd: c:\python38\python -m pip install -U pip
+  - cmd: c:\python38\python -m pip install cibuildwheel==%CIBW_VERSION%
+  - cmd: c:\python38\python -m cibuildwheel --output-dir wheelhouse
 
   - sh: cd src/ext/pybind11
   - sh: git checkout $PYBIND11_BRANCH
   - sh: cd ../../..
+  - sh: python -m pip install -U pip
   - sh: python -m pip install cibuildwheel==$CIBW_VERSION
   - sh: set OSX_ARCHITECTURES=$OSX_ARCHITECTURES
   - sh: python -m cibuildwheel $CIBW_CMD_OPTION --output-dir wheelhouse

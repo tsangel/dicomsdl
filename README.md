@@ -15,12 +15,12 @@ DICOM SDL can
 
 * read DICOM formatted files.
 * read medical images in DICOM file, if file encodes in raw/jpeg/jpeg2000/RLE/JPEG-LS format.
+* modify and save into DICOM formatted files.
 
 DICOM SDL is especially optimized for reading lots of DICOM formatted files quickly, and would be very useful for scanning and processing huge numbers of DICOM files.
 
 DICOM SDL cannot
 
-* modify/write function (will be add.)
 * send/receive DICOM over network.
 
 ## Install

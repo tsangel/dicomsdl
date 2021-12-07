@@ -2,10 +2,10 @@
 
 from sys import version_info
 import os
-import numpy as np
 
 IS_PY3 = version_info.major >= 3
 from ._dicomsdl import *
+# If you have `ImportError: DLL load failed in Microsoft Windows` on fresh installed Windows system, install Microsoft Visual C++ Redistributable. https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170
 from . import util
 
 def __dataset__getitem__(self, tagstr):
@@ -90,6 +90,7 @@ def __dataset__pixelData__(self, index=0, storedvalue=False):
     -3024.0
 
   """
+  import numpy as np
   # https://stackoverflow.com/questions/44659924/returning-numpy-arrays-via-pybind11
   info = self.getPixelDataInfo()
   
@@ -130,6 +131,7 @@ def __dataset__to_pil_image(self, index=0):
     >>> dset.to_pil_image().show()  # pop up system's default image viewer
 
   """
+  import numpy as np
   from PIL import Image
   # https://stackoverflow.com/questions/44659924/returning-numpy-arrays-via-pybind11
   info = self.getPixelDataInfo()
