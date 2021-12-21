@@ -945,6 +945,10 @@ void DataSet::load(tag_t load_until, InStream *instream) {
 void DataSet::saveToFile(const char* filename) {
   std::ofstream ofs;
   ofs.open (filename, std::ofstream::out | std::ofstream::binary);
+  if (!ofs) {
+    char *errmsg = strerror(errno);
+    LOGERROR_AND_THROW("cannot write to \"%s\": %s", filename, errmsg);
+  }
   saveToStream(ofs);
   ofs.close();
 }
