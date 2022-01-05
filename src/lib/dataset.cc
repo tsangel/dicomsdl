@@ -656,21 +656,19 @@ void DataSet::load(tag_t load_until, InStream *instream) {
     if (UINT32(buf8_) == 0) {  // buffer is empty
       n = instream->read(buf8_, 8);
       if (n < 8) {
-        LOGERROR_AND_THROW(
-            "DataSet::load - cannot read 8 bytes for Tag and VR at {%x}",
-            instream->tell());
+        // Some files have short tailing bytes (possibly zero?).
+        // Let just consume bytes.
+        while (!instream->is_eof())
+          instream->read(buf8_, 1);  // just consume bytes until eof
+        break;
       }
 
       if (UINT32(buf8_) == 0) {
+        // tag - zero, VR - zero, length - zero...
         // may be trailing zeros?
-        while (!instream->is_eof()) {
-          instream->read(buf8_, 1);  // just consume zeros
-          if (buf8_[0] != '\0') {
-            instream->unread(1);
-            break;
-          }
-        }
-        if (instream->is_eof()) break;
+        while (!instream->is_eof())
+          instream->read(buf8_, 1);  // just consume bytes until eof
+        break;
       }
     }
 
