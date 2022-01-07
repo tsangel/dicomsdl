@@ -44,6 +44,14 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-2"
+      CIBW_BUILD: cp36-* cp37-* cp38-* cp39-*
+      CIBW_CMD_OPTION:
+      CIBW_VERSION: 2.2.2
+      PYBIND11_BRANCH: v2.5
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      APPVEYOR_JOB_NAME: "python37-ubuntu-3"
+      CIBW_BUILD: cp310-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: v2.5
