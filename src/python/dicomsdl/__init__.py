@@ -95,10 +95,15 @@ def __dataset__pixelData__(self, index=0, storedvalue=False):
   info = self.getPixelDataInfo()
   
   dtype = info['dtype']
-  if info['PlanarConfiguration'] == 'RRRGGGBBB':
-    shape = [3, info['Rows'], info['Cols']]
-  elif info['PlanarConfiguration'] == 'RGBRGBRGB':
-    shape = [info['Rows'], info['Cols'], 3]
+  if info['SamplesPerPixel'] > 1:
+    if info['PlanarConfiguration'] == 'RRRGGGBBB':
+      shape = [3, info['Rows'], info['Cols']]
+    elif info['PlanarConfiguration'] == 'RGBRGBRGB':
+      shape = [info['Rows'], info['Cols'], 3]
+    else:
+      raise RuntimeError(
+        "SamplePerPixel is larger than 1 (%d) but PlanarConfiguration is unknown format (%s)"
+        %(info['SamplesPerPixel'], info['PlanarConfiguration']))
   else:
     shape = [info['Rows'], info['Cols']]
 
@@ -135,14 +140,17 @@ def __dataset__to_pil_image(self, index=0):
   from PIL import Image
   # https://stackoverflow.com/questions/44659924/returning-numpy-arrays-via-pybind11
   info = self.getPixelDataInfo()
-  
-  dtype = info['dtype']
-  if info['PlanarConfiguration'] == 'RRRGGGBBB':
-    shape = [3, info['Rows'], info['Cols']]
-    assert False # Need Implementation
-  elif info['PlanarConfiguration'] == 'RGBRGBRGB':
-    shape = [info['Rows'], info['Cols'], 3]
 
+  dtype = info['dtype']
+  if info['SamplesPerPixel'] > 1:
+    if info['PlanarConfiguration'] == 'RRRGGGBBB':
+      shape = [3, info['Rows'], info['Cols']]
+    elif info['PlanarConfiguration'] == 'RGBRGBRGB':
+      shape = [info['Rows'], info['Cols'], 3]
+    else:
+      raise RuntimeError(
+        "SamplePerPixel is larger than 1 (%d) but PlanarConfiguration is unknown format (%s)"
+        %(info['SamplesPerPixel'], info['PlanarConfiguration']))
   else:
     shape = [info['Rows'], info['Cols']]
 

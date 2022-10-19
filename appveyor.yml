@@ -13,10 +13,18 @@ environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-bigsur
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-1"
-      CIBW_BUILD: cp3*_universal2
+      CIBW_BUILD: cp38-macosx_universal2 cp39-macosx_universal2 cp310-macosx_universal2
       OSX_ARCHITECTURES: universal2
       CIBW_CMD_OPTION: --arch universal2
       CIBW_VERSION: 2.3.0
+      PYBIND11_BRANCH: stable
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
+      APPVEYOR_JOB_NAME: "python37-macos-mojave-2"
+      CIBW_BUILD: cp36-macosx_x86_64 cp37-macosx_x86_64
+      CIBW_CMD_OPTION:
+      CIBW_VERSION: 2.2.2
+      OSX_ARCHITECTURES: x86_64
       PYBIND11_BRANCH: stable
 
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
@@ -24,14 +32,6 @@ environment:
       CIBW_BUILD: cp27-* cp35-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 1.5.5
-      OSX_ARCHITECTURES: x86_64
-      PYBIND11_BRANCH: stable
-
-    - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
-      APPVEYOR_JOB_NAME: "python37-macos-mojave-2"
-      CIBW_BUILD: cp3*_x86_64
-      CIBW_CMD_OPTION:
-      CIBW_VERSION: 2.2.2
       OSX_ARCHITECTURES: x86_64
       PYBIND11_BRANCH: stable
 
