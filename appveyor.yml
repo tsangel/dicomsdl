@@ -27,13 +27,24 @@ environment:
       OSX_ARCHITECTURES: x86_64
       PYBIND11_BRANCH: stable
 
-    - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
-      APPVEYOR_JOB_NAME: "python37-macos-mojave-1"
-      CIBW_BUILD: cp27-* cp35-*
-      CIBW_CMD_OPTION:
-      CIBW_VERSION: 1.5.5
-      OSX_ARCHITECTURES: x86_64
+    # - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
+    #   APPVEYOR_JOB_NAME: "python37-macos-mojave-1"
+    #   CIBW_BUILD: cp27-* cp35-*
+    #   CIBW_CMD_OPTION:
+    #   CIBW_VERSION: 1.5.5
+    #   OSX_ARCHITECTURES: x86_64
+    #   PYBIND11_BRANCH: v2.5
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      APPVEYOR_JOB_NAME: "python37-vs2017-2"
+      CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
+
+    # - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    #   APPVEYOR_JOB_NAME: "python37-vs2015-1"
+    #   CIBW_BUILD: cp27-* cp35-*
+    #   CIBW_VERSION: 1.5.5
+    #   PYBIND11_BRANCH: stable
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-1"
@@ -44,28 +55,24 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-2"
-      CIBW_BUILD: cp36-* cp37-* cp38-* cp39-*
+      CIBW_BUILD: cp36-* cp37-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: v2.5
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-3"
-      CIBW_BUILD: cp310-*
+      CIBW_BUILD: cp38-* cp39-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: v2.5
 
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      APPVEYOR_JOB_NAME: "python37-vs2015-1"
-      CIBW_BUILD: cp27-* cp35-*
-      CIBW_VERSION: 1.5.5
-      PYBIND11_BRANCH: stable
-
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      APPVEYOR_JOB_NAME: "python37-vs2017-2"
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      APPVEYOR_JOB_NAME: "python37-ubuntu-4"
+      CIBW_BUILD: cp310-*
+      CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
-      PYBIND11_BRANCH: stable
+      PYBIND11_BRANCH: v2.5
 
 stack: python 3.8
 

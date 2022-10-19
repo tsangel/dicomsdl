@@ -579,19 +579,24 @@ PYBIND11_MODULE(_dicomsdl, m) {
              // SamplesPerPixel
              info["SamplesPerPixel"] = ds.getDataElement(0x00280002)->toLong(1);
 
-             // PlanarConfiguration(0: RGBRGBRGB..., 1:RRR..GGG...BBB...)
-             py::object oplanarconfig;
-             switch (ds.getDataElement(0x00280006)->toLong(-1)) {
-               case 0:
-                 info["PlanarConfiguration"] = py::cast("RGBRGBRGB");
-                 break;
-               case 1:
-                 info["PlanarConfiguration"] = py::cast("RRRGGGBBB");
-                 oplanarconfig = py::cast("RRRGGGBBB");
-                 break;
-               default:
-                 info["PlanarConfiguration"] = py::cast<py::none>(Py_None);
-                 break;
+             if (ds.getDataElement(0x00280002)->toLong(1) > 1) {
+               // TODO: Ignore planar configuration according to compression
+               //       Transfer Syntax
+               // PlanarConfiguration(0: RGBRGBRGB..., 1:RRR..GGG...BBB...)
+               switch (ds.getDataElement(0x00280006)->toLong(-1)) {
+                 case 0:
+                   info["PlanarConfiguration"] = py::cast("RGBRGBRGB");
+                   break;
+                 case 1:
+                   info["PlanarConfiguration"] = py::cast("RRRGGGBBB");
+                   break;
+                 default:
+                   info["PlanarConfiguration"] = py::cast<py::none>(Py_None);
+                   break;
+               }
+             } else {
+               // only 1 sample per pixel
+               info["PlanarConfiguration"] = py::cast<py::none>(Py_None);
              }
 
              // BitsAllocated
@@ -629,7 +634,11 @@ PYBIND11_MODULE(_dicomsdl, m) {
                // check in root dataset
                de = ds.getDataElement(tag);
                if (de->isValid()) {
-                 return py::cast(de->toDouble());
+                 if (de->length() > 0)
+                   return py::cast(de->toDouble());
+                 else
+                   // data element may have empty value.
+                   return objnone;
                }
 
                // check in SharedFunctionalGroupsSequence
@@ -651,9 +660,10 @@ PYBIND11_MODULE(_dicomsdl, m) {
                for (int i = 0; i < seqsize; ++i) {
                  snprintf(buf, 128, "%08x.0.%08x", macro_tag, tag);
                  de = (*seq)[i]->getDataElement(buf);
-                 if (de->isValid()) {
+                 if (de->isValid() && de->length() > 0) {
                    li.append(py::cast(de->toDouble()));
                  } else {
+                   // data element is not valid or has empty value.
                    li.append(objnone);
                  }
                }
