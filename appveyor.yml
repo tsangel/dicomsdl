@@ -13,14 +13,22 @@ environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-bigsur
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-1"
-      CIBW_BUILD: cp38-macosx_universal2 cp39-macosx_universal2 cp310-macosx_universal2 cp311-macosx_universal2
+      CIBW_BUILD: cp311-macosx_universal2
       OSX_ARCHITECTURES: universal2
       CIBW_CMD_OPTION: --arch universal2
-      CIBW_VERSION: 2.3.0
+      CIBW_VERSION: 2.11.2
+      PYBIND11_BRANCH: stable
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: macos-bigsur
+      APPVEYOR_JOB_NAME: "python37-macos-bigsur-2"
+      CIBW_BUILD: cp38-macosx_universal2 cp39-macosx_universal2 cp310-macosx_universal2
+      OSX_ARCHITECTURES: universal2
+      CIBW_CMD_OPTION: --arch universal2
+      CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
 
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
-      APPVEYOR_JOB_NAME: "python37-macos-mojave-2"
+      APPVEYOR_JOB_NAME: "python37-macos-mojave-3"
       CIBW_BUILD: cp36-macosx_x86_64 cp37-macosx_x86_64
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
@@ -37,7 +45,14 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       APPVEYOR_JOB_NAME: "python37-vs2017-2"
+      CIBW_BUILD: cp36-* cp37-* cp38-* cp39-* cp310-* 
       CIBW_VERSION: 2.2.2
+      PYBIND11_BRANCH: stable
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      APPVEYOR_JOB_NAME: "python37-vs2017-3"
+      CIBW_BUILD: cp311-win_amd64 cp311-win32
+      CIBW_VERSION: 2.11.2
       PYBIND11_BRANCH: stable
 
     # - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
@@ -65,14 +80,21 @@ environment:
       CIBW_BUILD: cp38-* cp39-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
-      PYBIND11_BRANCH: v2.5
+      PYBIND11_BRANCH: stable
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-4"
-      CIBW_BUILD: cp310-* cp311-*
+      CIBW_BUILD: cp310-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
-      PYBIND11_BRANCH: v2.5
+      PYBIND11_BRANCH: stable
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      APPVEYOR_JOB_NAME: "python37-ubuntu-5"
+      CIBW_BUILD: cp311-*
+      CIBW_CMD_OPTION:
+      CIBW_VERSION: 2.11.2
+      PYBIND11_BRANCH: stable
 
 stack: python 3.8
 
@@ -97,7 +119,6 @@ build_script:
   - sh: python -m pip install cibuildwheel==$CIBW_VERSION
   - sh: set OSX_ARCHITECTURES=$OSX_ARCHITECTURES
   - sh: python -m cibuildwheel $CIBW_CMD_OPTION --output-dir wheelhouse
-
 
 artifacts:
   - path: "wheelhouse\\*.whl"
