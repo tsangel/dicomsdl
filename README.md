@@ -44,9 +44,9 @@ $ python setup.py install
 
 DICOMSDL was successfully compiled and ran on following environments
 
-* Microsoft Windows 7/10/11 (x86, x64), Python 3.6-3.10
-* Linux x86/x64 (Ubuntu), Python 2.7, 3.5-3.10
-* MacOS 10.9+ (x86_64, arm64), Python 3.6-3.10
+* Microsoft Windows 7/10/11 (x86, x64), Python 3.6-3.11
+* Linux x86/x64 (Ubuntu), Python 2.7, 3.5-3.11
+* MacOS 10.9+ (x86_64, arm64), Python 3.6-3.11
 (No more support python 2.7-3.5 on Windows and MacOS since 0.108.5.)
 
 If you have `ImportError` in Microsoft Windows, install [Microsoft Visual C++ Redistributable](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170).
@@ -61,7 +61,7 @@ Please look ipynb files in tutorial folder for detailed explanations.
 >>> dset = dicom.open("somefile.dcm")
 
 >>> print (dset.Rows, dset.Columns)
-512 512
+512 512 
 
 >>> dset.getPixelDataInfo()
 {'Rows': 512, 'Cols': 512, 'NumberOfFrames': 1, 'SamplesPerPixel': 1, 'PlanarConfiguration': None, 'BitsAllocated': 16, 'BytesAllocated': 2, 'BitsStored': 16, 'PixelRepresentation': True, 'dtype': 'h', 'PhotometricInterpretation': 'MONOCHROME2', 'WindowCenter': None, 'WindowWidth': None, 'RescaleIntercept': -1024.0, 'RescaleSlope': 1.0}

@@ -31,7 +31,7 @@ static bool is_contiguous(py::array a) {
 
 PYBIND11_MODULE(_util, m) {
   m.def(
-      "_convert_to_uint8",
+    "_convert_to_uint8",
       [](py::array inarray, py::array outarray, float xmin, float xmax) {
         if (!outarray.writeable()) {
           py::pybind11_fail("out array is not writeable");

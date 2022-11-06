@@ -13,7 +13,7 @@ environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-bigsur
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-1"
-      CIBW_BUILD: cp38-macosx_universal2 cp39-macosx_universal2 cp310-macosx_universal2
+      CIBW_BUILD: cp38-macosx_universal2 cp39-macosx_universal2 cp310-macosx_universal2 cp311-macosx_universal2
       OSX_ARCHITECTURES: universal2
       CIBW_CMD_OPTION: --arch universal2
       CIBW_VERSION: 2.3.0
@@ -69,7 +69,7 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-4"
-      CIBW_BUILD: cp310-*
+      CIBW_BUILD: cp310-* cp311-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: v2.5
