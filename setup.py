@@ -64,6 +64,14 @@ class CMakeBuild(build_ext):
         else:
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
             build_args += ['--', '-j2']
+            
+            if platform.system() == "Darwin":
+                if os.getenv('OSX_ARCHITECTURES') == "universal2":
+                    cmake_args += ['-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64']
+                elif os.getenv('OSX_ARCHITECTURES') == "arm64":
+                    cmake_args += ['-DCMAKE_OSX_ARCHITECTURES=arm64']
+                elif os.getenv('OSX_ARCHITECTURES') == "x86_64":
+                    cmake_args += ['-DCMAKE_OSX_ARCHITECTURES=x86_64']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
