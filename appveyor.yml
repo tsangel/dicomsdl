@@ -117,7 +117,7 @@ build_script:
   - sh: cd ../../..
   - sh: python -m pip install -U pip
   - sh: python -m pip install cibuildwheel==$CIBW_VERSION
-  - sh: set OSX_ARCHITECTURES=$OSX_ARCHITECTURES
+  - sh: export OSX_ARCHITECTURES=$OSX_ARCHITECTURES
   - sh: python -m cibuildwheel $CIBW_CMD_OPTION --output-dir wheelhouse
 
 artifacts:
