@@ -15,7 +15,7 @@ environment:
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-1"
       CIBW_BUILD: cp311-macosx_universal2
       OSX_ARCHITECTURES: universal2
-      CIBW_CMD_OPTION: --arch universal2
+      CIBW_CMD_OPTION: --archs universal2
       CIBW_VERSION: 2.11.2
       PYBIND11_BRANCH: stable
 
@@ -23,7 +23,7 @@ environment:
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-2"
       CIBW_BUILD: cp38-macosx_universal2 cp39-macosx_universal2 cp310-macosx_universal2
       OSX_ARCHITECTURES: universal2
-      CIBW_CMD_OPTION: --arch universal2
+      CIBW_CMD_OPTION: --archs universal2
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
 
