@@ -13,7 +13,7 @@ environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-bigsur
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-1"
-      CIBW_BUILD: cp311-macosx_universal2
+      CIBW_BUILD: cp311-macosx_universal2 cp312-macosx_universal2
       OSX_ARCHITECTURES: universal2
       CIBW_CMD_OPTION: --archs universal2
       CIBW_VERSION: 2.11.2
@@ -21,7 +21,7 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-bigsur
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-1-arm"
-      CIBW_BUILD: cp311-macosx_arm64
+      CIBW_BUILD: cp311-macosx_arm64 cp312-macosx_arm64
       OSX_ARCHITECTURES: arm64
       CIBW_CMD_OPTION: --archs arm64
       CIBW_VERSION: 2.11.2
@@ -59,7 +59,7 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       APPVEYOR_JOB_NAME: "python37-vs2017-3"
-      CIBW_BUILD: cp311-win_amd64 cp311-win32
+      CIBW_BUILD: cp311-win_amd64 cp311-win32 cp312-win_amd64 cp312-win32
       CIBW_VERSION: 2.11.2
       PYBIND11_BRANCH: stable
 
@@ -100,6 +100,13 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-5"
       CIBW_BUILD: cp311-*
+      CIBW_CMD_OPTION:
+      CIBW_VERSION: 2.11.2
+      PYBIND11_BRANCH: stable
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      APPVEYOR_JOB_NAME: "python37-ubuntu-6"
+      CIBW_BUILD: cp312-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.11.2
       PYBIND11_BRANCH: stable

@@ -81,6 +81,9 @@ void _DataElement_setValue(DataElement &de, py::object &obj) {
         de.fromString(py::cast<std::wstring>(obj));
       }
       break;
+    case VR::SQ:
+      THROW_ERROR("Don't setValue() to a Sequence DataElemlent. Use addDataElement instead."); 
+      break;
     default:
       if (py::isinstance<py::str>(obj) || py::isinstance<py::bytes>(obj))
         de.fromBytes(py::cast<std::string>(obj));
