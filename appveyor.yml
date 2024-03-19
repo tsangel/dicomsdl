@@ -53,7 +53,13 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       APPVEYOR_JOB_NAME: "python37-vs2017-2"
-      CIBW_BUILD: cp36-* cp37-* cp38-* cp39-* cp310-* 
+      CIBW_BUILD: cp36-* cp37-* cp38-*
+      CIBW_VERSION: 2.2.2
+      PYBIND11_BRANCH: stable
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      APPVEYOR_JOB_NAME: "python37-vs2017-2a"
+      CIBW_BUILD: cp39-* cp310-* 
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
 
