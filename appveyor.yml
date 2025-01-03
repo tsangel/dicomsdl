@@ -42,38 +42,16 @@ environment:
 
     - APPVEYOR_BUILD_WORKER_IMAGE: macos-bigsur
       APPVEYOR_JOB_NAME: "python37-macos-bigsur-2"
-      CIBW_BUILD: cp38-macosx_universal2 cp39-macosx_universal2 cp310-macosx_universal2
+      CIBW_BUILD: cp39-macosx_universal2 cp310-macosx_universal2
       OSX_ARCHITECTURES: universal2
       CIBW_CMD_OPTION: --archs universal2
-      CIBW_VERSION: 2.2.2
-      PYBIND11_BRANCH: stable
-
-    - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
-      APPVEYOR_JOB_NAME: "python37-macos-mojave-3"
-      CIBW_BUILD: cp36-macosx_x86_64 cp37-macosx_x86_64
-      CIBW_CMD_OPTION:
-      CIBW_VERSION: 2.2.2
-      OSX_ARCHITECTURES: x86_64
-      PYBIND11_BRANCH: stable
-
-    # - APPVEYOR_BUILD_WORKER_IMAGE: macos-mojave
-    #   APPVEYOR_JOB_NAME: "python37-macos-mojave-1"
-    #   CIBW_BUILD: cp27-* cp35-*
-    #   CIBW_CMD_OPTION:
-    #   CIBW_VERSION: 1.5.5
-    #   OSX_ARCHITECTURES: x86_64
-    #   PYBIND11_BRANCH: v2.5
-
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      APPVEYOR_JOB_NAME: "python37-vs2017-2"
-      CIBW_BUILD: cp36-* cp37-* cp38-*
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       APPVEYOR_JOB_NAME: "python37-vs2017-2a"
       CIBW_BUILD: cp39-* cp310-* 
-      CIBW_VERSION: 2.2.2
+      CIBW_VERSION: 2.16.2
       PYBIND11_BRANCH: stable
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
@@ -81,30 +59,10 @@ environment:
       CIBW_BUILD: cp311-win_amd64 cp311-win32 cp312-win_amd64 cp312-win32
       CIBW_VERSION: 2.16.2
       PYBIND11_BRANCH: stable
-      
-    # - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-    #   APPVEYOR_JOB_NAME: "python37-vs2015-1"
-    #   CIBW_BUILD: cp27-* cp35-*
-    #   CIBW_VERSION: 1.5.5
-    #   PYBIND11_BRANCH: stable
-
-    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      APPVEYOR_JOB_NAME: "python37-ubuntu-1"
-      CIBW_BUILD: cp27-* cp35-*
-      CIBW_CMD_OPTION:
-      CIBW_VERSION: 1.5.5
-      PYBIND11_BRANCH: v2.5
-
-    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      APPVEYOR_JOB_NAME: "python37-ubuntu-2"
-      CIBW_BUILD: cp36-* cp37-*
-      CIBW_CMD_OPTION:
-      CIBW_VERSION: 2.2.2
-      PYBIND11_BRANCH: v2.5
 
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       APPVEYOR_JOB_NAME: "python37-ubuntu-3"
-      CIBW_BUILD: cp38-* cp39-*
+      CIBW_BUILD: cp39-*
       CIBW_CMD_OPTION:
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
@@ -130,7 +88,7 @@ environment:
       CIBW_VERSION: 2.16.2
       PYBIND11_BRANCH: stable
 
-stack: python 3.8
+stack: python 3.11
 
 init:
   - cmd: set PATH=C:\Python38;C:\Python38\Scripts;%PATH%
@@ -142,9 +100,9 @@ build_script:
   - cmd: cd src\ext\pybind11
   - cmd: git checkout %PYBIND11_BRANCH%
   - cmd: cd ..\..\..
-  - cmd: c:\python38\python -m pip install -U pip
-  - cmd: c:\python38\python -m pip install cibuildwheel==%CIBW_VERSION%
-  - cmd: c:\python38\python -m cibuildwheel --output-dir wheelhouse
+  - cmd: c:\python311-x64\python -m pip install -U pip
+  - cmd: c:\python311-x64\python -m pip install cibuildwheel==%CIBW_VERSION%
+  - cmd: c:\python311-x64\python -m cibuildwheel --output-dir wheelhouse
 
   - sh: cd src/ext/pybind11
   - sh: git checkout $PYBIND11_BRANCH
