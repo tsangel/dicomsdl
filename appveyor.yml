@@ -91,7 +91,7 @@ environment:
 stack: python 3.11
 
 init:
-  - cmd: set PATH=C:\Python311;C:\Python311\Scripts;%PATH%
+  - cmd: set PATH=C:\Python311-x64;C:\Python311-x64\Scripts;%PATH%
 
 install:
   - git submodule update --init --recursive
@@ -100,9 +100,9 @@ build_script:
   - cmd: cd src\ext\pybind11
   - cmd: git checkout %PYBIND11_BRANCH%
   - cmd: cd ..\..\..
-  - cmd: c:\python311\python -m pip install -U pip
-  - cmd: c:\python311\python -m pip install cibuildwheel==%CIBW_VERSION%
-  - cmd: c:\python311\python -m cibuildwheel --output-dir wheelhouse
+  - cmd: C:\Python311-x64\python -m pip install -U pip
+  - cmd: C:\Python311-x64\python -m pip install cibuildwheel==%CIBW_VERSION%
+  - cmd: C:\Python311-x64\python -m cibuildwheel --output-dir wheelhouse
 
   - sh: cd src/ext/pybind11
   - sh: git checkout $PYBIND11_BRANCH
