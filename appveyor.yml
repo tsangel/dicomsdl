@@ -19,7 +19,7 @@ environment:
       CIBW_VERSION: 2.22.0
       PYBIND11_BRANCH: stable
 
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       APPVEYOR_JOB_NAME: "python37-vs2017-4"
       CIBW_BUILD: cp313-win_amd64 cp313-win32
       CIBW_VERSION: 2.22.0
@@ -48,13 +48,13 @@ environment:
       CIBW_VERSION: 2.2.2
       PYBIND11_BRANCH: stable
 
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       APPVEYOR_JOB_NAME: "python37-vs2017-2a"
       CIBW_BUILD: cp39-* cp310-* 
       CIBW_VERSION: 2.16.2
       PYBIND11_BRANCH: stable
 
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       APPVEYOR_JOB_NAME: "python37-vs2017-3"
       CIBW_BUILD: cp311-win_amd64 cp311-win32 cp312-win_amd64 cp312-win32
       CIBW_VERSION: 2.16.2
